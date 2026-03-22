@@ -4,34 +4,46 @@ import { prisma } from "@/lib/prisma";
 import HeroSearch from "@/components/public/HeroSearch";
 import ExperienceGrid from "@/components/public/ExperienceGrid";
 import { Star, Compass, Gift, ShieldCheck } from "lucide-react";
+import type { Experience, Room } from "@/types";
+
+type SerializedExperience = Experience & {
+  hotel?: { rooms?: Room[] };
+};
 
 export default async function HomePage() {
-  const experiences = await prisma.experience.findMany({
-    where: { isActive: true },
-    include: {
-      hotel: {
-        include: { rooms: { where: { isActive: true }, orderBy: { pricePerNight: "asc" } } },
+  let serialized: SerializedExperience[] = [];
+  let experienceCount = 0;
+
+  try {
+    const experiences = await prisma.experience.findMany({
+      where: { isActive: true },
+      include: {
+        hotel: {
+          include: { rooms: { where: { isActive: true }, orderBy: { pricePerNight: "asc" } } },
+        },
       },
-    },
-    orderBy: { createdAt: "desc" },
-    take: 9,
-  });
+      orderBy: { createdAt: "desc" },
+      take: 9,
+    });
 
-  const experienceCount = await prisma.experience.count({
-    where: { isActive: true },
-  });
+    experienceCount = await prisma.experience.count({
+      where: { isActive: true },
+    });
 
-  // Serialize Decimal fields for client components
-  const serialized = experiences.map((exp) => ({
-    ...exp,
-    hotel: {
-      ...exp.hotel,
-      rooms: exp.hotel.rooms.map((r) => ({
-        ...r,
-        pricePerNight: Number(r.pricePerNight),
-      })),
-    },
-  }));
+    // Serialize Decimal fields for client components
+    serialized = experiences.map((exp) => ({
+      ...exp,
+      hotel: {
+        ...exp.hotel,
+        rooms: exp.hotel.rooms.map((r) => ({
+          ...r,
+          pricePerNight: Number(r.pricePerNight),
+        })),
+      },
+    }));
+  } catch (error) {
+    console.error("Database query failed (tables may not exist yet):", error);
+  }
 
   return (
     <>
