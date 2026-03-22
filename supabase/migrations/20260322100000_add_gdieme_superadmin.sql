@@ -2,11 +2,22 @@
 --
 -- Username: gdieme | Password: probiteE@08020 | Role: super_admin
 
--- Step 1: Create auth user (only if not exists)
+-- Ensure Maison Etoile hotel exists
+INSERT INTO "Hotel" ("id", "name", "slug", "address", "city", "country", "description", "stars", "phone", "email", "isActive", "createdAt", "updatedAt")
+VALUES (
+  gen_random_uuid()::text, 'Maison Etoile', 'maison-etoile', '12 Rue de Rivoli', 'Paris', 'France',
+  'A charming 4-star boutique hotel in the heart of Paris, steps from the Louvre and the Seine.',
+  4, '+33 1 42 60 00 00', 'bonjour@maison-etoile.fr', true, NOW(), NOW()
+) ON CONFLICT ("slug") DO NOTHING;
+
+-- Create auth user, identity, guest, and staff assignment
 DO $$
 DECLARE
   _uid uuid;
+  _hotel_id text;
 BEGIN
+  SELECT "id" INTO _hotel_id FROM "Hotel" WHERE "slug" = 'maison-etoile';
+
   SELECT id INTO _uid FROM auth.users WHERE email = 'gdieme@parisvasy.com';
 
   IF _uid IS NULL THEN
@@ -29,7 +40,21 @@ BEGIN
     RETURNING id INTO _uid;
   END IF;
 
-  -- Step 2: Create Guest record
+  -- Create identity record (required for Supabase Auth sign-in)
+  INSERT INTO auth.identities (id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at)
+  VALUES (
+    _uid,
+    _uid,
+    jsonb_build_object('sub', _uid::text, 'email', 'gdieme@parisvasy.com', 'email_verified', true),
+    'email',
+    _uid::text,
+    NOW(),
+    NOW(),
+    NOW()
+  )
+  ON CONFLICT DO NOTHING;
+
+  -- Create Guest record
   INSERT INTO "Guest" ("id", "authUserId", "email", "firstName", "lastName", "phone", "createdAt", "updatedAt")
   VALUES (gen_random_uuid()::text, _uid::text, 'gdieme@parisvasy.com', 'Georges', 'DIEME', '+33 6 00 00 00 00', NOW(), NOW())
   ON CONFLICT ("email") DO UPDATE SET
@@ -38,16 +63,9 @@ BEGIN
     "authUserId" = _uid::text,
     "updatedAt" = NOW();
 
-  -- Step 3: Create StaffAssignment (super_admin at first hotel)
+  -- Create StaffAssignment (super_admin)
   INSERT INTO "StaffAssignment" ("id", "userId", "hotelId", "role", "isActive", "createdAt")
-  VALUES (
-    gen_random_uuid()::text,
-    _uid::text,
-    (SELECT "id" FROM "Hotel" LIMIT 1),
-    'super_admin',
-    true,
-    NOW()
-  )
+  VALUES (gen_random_uuid()::text, _uid::text, _hotel_id, 'super_admin', true, NOW())
   ON CONFLICT ("userId", "hotelId") DO UPDATE SET
     "role" = 'super_admin',
     "isActive" = true;
