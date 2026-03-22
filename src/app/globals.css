@@ -1,0 +1,147 @@
+@import url("https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@300;400;500;600;700;800&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-cream font-sans text-navy-500;
+    margin: 0;
+    min-height: 100vh;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-serif text-navy-500;
+  }
+
+  h1 {
+    @apply text-4xl md:text-5xl font-normal leading-tight;
+  }
+
+  h2 {
+    @apply text-3xl md:text-4xl font-normal leading-snug;
+  }
+
+  h3 {
+    @apply text-2xl md:text-3xl font-normal;
+  }
+
+  h4 {
+    @apply text-xl md:text-2xl font-normal;
+  }
+
+  /* Remove default focus styles and use custom ones */
+  :focus-visible {
+    @apply outline-none ring-2 ring-vermillion-300 ring-offset-2;
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Selection color */
+  ::selection {
+    @apply bg-vermillion-100 text-vermillion-900;
+  }
+}
+
+@layer components {
+  /* Glass card effect used across the luxury UI */
+  .glass-card {
+    @apply rounded-2xl border border-white/20 bg-white/80 backdrop-blur-md shadow-sm;
+  }
+
+  /* Hover card lift effect */
+  .card-hover {
+    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-lg;
+  }
+
+  /* Gradient text for hero sections */
+  .gradient-text {
+    @apply bg-gradient-to-r from-vermillion-500 to-champagne-400 bg-clip-text text-transparent;
+  }
+
+  /* Animated underline for links */
+  .link-underline {
+    @apply relative after:absolute after:bottom-0 after:left-0 after:h-[1px] after:w-0 after:bg-current after:transition-all after:duration-300 hover:after:w-full;
+  }
+
+  /* Container with consistent padding */
+  .section-container {
+    @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+}
+
+@layer utilities {
+  /* Hide scrollbar but keep functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Animate in utilities for modals/dialogs */
+  .animate-in {
+    animation: animateIn 200ms ease-out;
+  }
+
+  .fade-in {
+    animation: fadeIn 200ms ease-out;
+  }
+
+  .zoom-in-95 {
+    animation: zoomIn95 200ms ease-out;
+  }
+
+  @keyframes animateIn {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes zoomIn95 {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+}

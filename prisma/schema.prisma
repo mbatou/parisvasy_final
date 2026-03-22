@@ -1,0 +1,189 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── ENUMS ───
+
+enum UserRole {
+  super_admin
+  hotel_manager
+  finance_manager
+  front_desk
+  customer
+}
+
+enum BookingStatus {
+  pending
+  confirmed
+  checked_in
+  checked_out
+  cancelled
+  no_show
+}
+
+enum ExperienceCategory {
+  cruise
+  gastronomy
+  culture
+  wellness
+  adventure
+  nightlife
+}
+
+enum RoomType {
+  classic
+  superior
+  deluxe
+  suite
+  penthouse
+}
+
+// ─── MODELS ───
+
+model Hotel {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  address     String
+  city        String
+  country     String   @default("France")
+  description String?  @db.Text
+  stars       Int      @default(4)
+  coverImage  String?
+  images      String[] // Array of Supabase Storage URLs
+  phone       String?
+  email       String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  rooms       Room[]
+  experiences Experience[]
+  bookings    Booking[]
+  staff       StaffAssignment[]
+}
+
+model Room {
+  id            String   @id @default(cuid())
+  hotelId       String
+  hotel         Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  name          String
+  type          RoomType
+  description   String?  @db.Text
+  size          Int
+  maxGuests     Int      @default(2)
+  amenities     String[]
+  images        String[]
+  pricePerNight Decimal  @db.Decimal(10, 2)
+  totalRooms    Int      @default(1)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  bookings Booking[]
+
+  @@index([hotelId])
+}
+
+model Experience {
+  id          String             @id @default(cuid())
+  hotelId     String
+  hotel       Hotel              @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  title       String
+  slug        String             @unique
+  category    ExperienceCategory
+  description String?            @db.Text
+  location    String
+  duration    String
+  maxGroup    Int                @default(10)
+  inclusions  String[]
+  images      String[]
+  coverImage  String?
+  isFlash     Boolean            @default(false)
+  flashStart  DateTime?
+  flashEnd    DateTime?
+  isActive    Boolean            @default(true)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  bookings Booking[]
+
+  @@index([hotelId])
+  @@index([category])
+}
+
+model Booking {
+  id              String        @id @default(cuid())
+  reference       String        @unique
+  hotelId         String
+  hotel           Hotel         @relation(fields: [hotelId], references: [id])
+  roomId          String
+  room            Room          @relation(fields: [roomId], references: [id])
+  experienceId    String
+  experience      Experience    @relation(fields: [experienceId], references: [id])
+  guestId         String
+  guest           Guest         @relation(fields: [guestId], references: [id])
+
+  checkIn         DateTime
+  checkOut        DateTime
+  nights          Int
+  guestCount      Int           @default(2)
+  roomTotal       Decimal       @db.Decimal(10, 2)
+  status          BookingStatus @default(pending)
+
+  stripeSetupIntentId   String?
+  stripePaymentMethodId String?
+  cardLast4             String?
+  cardBrand             String?
+  warrantyCollected     Boolean  @default(false)
+
+  checkedInAt  DateTime?
+  checkedInBy  String?
+  checkedOutAt DateTime?
+  checkedOutBy String?
+
+  notes     String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([hotelId])
+  @@index([status])
+  @@index([checkIn])
+  @@index([guestId])
+}
+
+model Guest {
+  id          String   @id @default(cuid())
+  authUserId  String?  @unique
+  email       String   @unique
+  firstName   String
+  lastName    String
+  phone       String?
+  nationality String?
+  idNumber    String?
+  notes       String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  bookings Booking[]
+}
+
+model StaffAssignment {
+  id        String   @id @default(cuid())
+  userId    String
+  hotelId   String
+  hotel     Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  role      UserRole
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, hotelId])
+  @@index([userId])
+  @@index([hotelId])
+}
