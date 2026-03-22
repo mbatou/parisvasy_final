@@ -177,7 +177,7 @@ export default function BookingConfirmation({
         <Mail className="h-5 w-5 shrink-0 text-white/30" />
         <p className="text-sm text-white/40">
           A confirmation email has been sent to{" "}
-          <span className="font-medium text-navy">
+          <span className="font-medium text-white">
             {booking.guest?.email ?? "your email address"}
           </span>
           .
