@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { prisma } from "@/lib/prisma";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { Sidebar } from "@/components/admin/Sidebar";
 import { TopBar } from "@/components/admin/TopBar";
 import type { UserRole } from "@/types";
@@ -30,11 +30,20 @@ export default async function AdminLayout({
   }> = [];
 
   try {
-    assignments = await prisma.staffAssignment.findMany({
-      where: { userId: user.id, isActive: true },
-      include: { hotel: { select: { id: true, name: true } } },
-      orderBy: { createdAt: "desc" },
-    });
+    const db = createAdminClient();
+    const { data } = await db
+      .from('StaffAssignment')
+      .select('role, hotelId, hotel:Hotel(id, name)')
+      .eq('userId', user.id)
+      .eq('isActive', true)
+      .order('createdAt', { ascending: false });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    assignments = (data ?? []).map((d: any) => ({
+      role: d.role,
+      hotelId: d.hotelId,
+      hotel: Array.isArray(d.hotel) ? d.hotel[0] : d.hotel,
+    }));
   } catch {
     // Tables might not exist yet
   }
@@ -70,10 +79,13 @@ export default async function AdminLayout({
   let hotels = assignments.map((a) => a.hotel);
   if (role === "super_admin") {
     try {
-      hotels = await prisma.hotel.findMany({
-        select: { id: true, name: true },
-        orderBy: { name: "asc" },
-      });
+      const db = createAdminClient();
+      const { data } = await db
+        .from('Hotel')
+        .select('id, name')
+        .order('name', { ascending: true });
+
+      hotels = data ?? hotels;
     } catch {
       // Tables might not exist yet
     }
@@ -86,10 +98,15 @@ export default async function AdminLayout({
   // Guest record for display name (fallback to email)
   let guest: { firstName: string; lastName: string } | null = null;
   try {
-    guest = await prisma.guest.findFirst({
-      where: { authUserId: user.id },
-      select: { firstName: true, lastName: true },
-    });
+    const db = createAdminClient();
+    const { data } = await db
+      .from('Guest')
+      .select('firstName, lastName')
+      .eq('authUserId', user.id)
+      .limit(1)
+      .single();
+
+    guest = data;
   } catch {
     // Tables might not exist yet
   }

@@ -2,11 +2,12 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { STATUS_COLORS, STATUS_LABELS } from "@/types";
+import type { BookingStatus } from "@/types";
 import {
   Table,
   TableHeader,
@@ -24,30 +25,35 @@ export default async function GuestDetailPage({
 }) {
   const { id } = await params;
 
-  const guest = await prisma.guest.findUnique({
-    where: { id },
-    include: {
-      bookings: {
-        include: {
-          hotel: { select: { name: true } },
-          room: { select: { name: true } },
-          experience: { select: { title: true } },
-        },
-        orderBy: { checkIn: "desc" },
-      },
-    },
-  });
+  const db = createAdminClient();
+  const { data: guest, error } = await db
+    .from('Guest')
+    .select('*')
+    .eq('id', id)
+    .single();
 
-  if (!guest) {
+  if (error || !guest) {
     notFound();
   }
 
-  const totalSpent = guest.bookings.reduce(
+  // Fetch bookings for this guest with joins
+  const { data: bookingsData } = await db
+    .from('Booking')
+    .select('*, hotel:Hotel(name), room:Room(name), experience:Experience(title)')
+    .eq('guestId', id)
+    .order('checkIn', { ascending: false });
+
+  const bookings = bookingsData ?? [];
+
+  const totalSpent = bookings.reduce(
     (sum, b) => sum + Number(b.roomTotal),
     0
   );
-  const totalBookings = guest.bookings.length;
-  const totalNights = guest.bookings.reduce((sum, b) => sum + b.nights, 0);
+  const totalBookings = bookings.length;
+  const totalNights = bookings.reduce((sum, b) => sum + b.nights, 0);
+
+  // Attach bookings to guest for rendering
+  const guestWithBookings = { ...guest, bookings };
 
   return (
     <div className="space-y-8">
@@ -55,7 +61,7 @@ export default async function GuestDetailPage({
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-light text-white font-serif">
-            {guest.firstName} {guest.lastName}
+            {guestWithBookings.firstName} {guestWithBookings.lastName}
           </h1>
           <p className="mt-1 text-sm text-white/40 font-sans">
             Guest profile and booking history
@@ -74,44 +80,44 @@ export default async function GuestDetailPage({
         <div className="space-y-6">
           <div className="border border-white/[0.06] bg-pv-black-80 p-6">
             <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-gold text-pv-black text-xl font-bold text-white">
-              {guest.firstName.charAt(0)}
-              {guest.lastName.charAt(0)}
+              {guestWithBookings.firstName.charAt(0)}
+              {guestWithBookings.lastName.charAt(0)}
             </div>
 
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-sm">
                 <Mail className="h-4 w-4 text-white/40" />
-                <span className="text-white">{guest.email}</span>
+                <span className="text-white">{guestWithBookings.email}</span>
               </div>
-              {guest.phone && (
+              {guestWithBookings.phone && (
                 <div className="flex items-center gap-2 text-sm">
                   <Phone className="h-4 w-4 text-white/40" />
-                  <span className="text-white">{guest.phone}</span>
+                  <span className="text-white">{guestWithBookings.phone}</span>
                 </div>
               )}
-              {guest.nationality && (
+              {guestWithBookings.nationality && (
                 <div className="flex items-center gap-2 text-sm">
                   <Globe className="h-4 w-4 text-white/40" />
-                  <span className="text-white">{guest.nationality}</span>
+                  <span className="text-white">{guestWithBookings.nationality}</span>
                 </div>
               )}
-              {guest.idNumber && (
+              {guestWithBookings.idNumber && (
                 <div className="flex items-center gap-2 text-sm">
                   <CreditCard className="h-4 w-4 text-white/40" />
-                  <span className="text-white">{guest.idNumber}</span>
+                  <span className="text-white">{guestWithBookings.idNumber}</span>
                 </div>
               )}
             </div>
 
-            {guest.notes && (
+            {guestWithBookings.notes && (
               <div className="mt-4 rounded-lg bg-pv-black-90 p-3">
                 <p className="text-xs font-medium text-white/80">Notes</p>
-                <p className="mt-1 text-sm text-white">{guest.notes}</p>
+                <p className="mt-1 text-sm text-white">{guestWithBookings.notes}</p>
               </div>
             )}
 
             <p className="mt-4 text-xs text-white/30">
-              Guest since {formatDate(guest.createdAt)}
+              Guest since {formatDate(guestWithBookings.createdAt)}
             </p>
           </div>
 
@@ -144,7 +150,7 @@ export default async function GuestDetailPage({
                 Booking History
               </h2>
             </div>
-            {guest.bookings.length === 0 ? (
+            {guestWithBookings.bookings.length === 0 ? (
               <div className="px-6 py-12 text-center text-sm text-white/40">
                 No bookings found for this guest.
               </div>
@@ -162,7 +168,8 @@ export default async function GuestDetailPage({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {guest.bookings.map((booking) => (
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                  {guestWithBookings.bookings.map((booking: any) => (
                     <TableRow key={booking.id}>
                       <TableCell>
                         <Link
@@ -192,10 +199,10 @@ export default async function GuestDetailPage({
                         <span
                           className={cn(
                             "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold",
-                            STATUS_COLORS[booking.status]
+                            STATUS_COLORS[booking.status as BookingStatus]
                           )}
                         >
-                          {STATUS_LABELS[booking.status]}
+                          {STATUS_LABELS[booking.status as BookingStatus]}
                         </span>
                       </TableCell>
                     </TableRow>

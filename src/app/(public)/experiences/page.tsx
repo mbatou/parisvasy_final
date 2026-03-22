@@ -1,8 +1,8 @@
 export const dynamic = "force-dynamic";
 
-import { prisma } from "@/lib/prisma";
+import { createAdminClient } from "@/lib/supabase/admin";
 import ExperienceGrid from "@/components/public/ExperienceGrid";
-import type { ExperienceCategory } from "@/types";
+import type { ExperienceCategory, Room } from "@/types";
 
 interface ExperiencesPageProps {
   searchParams: Promise<{
@@ -18,41 +18,40 @@ export default async function ExperiencesPage({
   const category = params.category as ExperienceCategory | undefined;
   const search = params.q;
 
-  const where: Record<string, unknown> = { isActive: true };
-
-  if (category) {
-    where.category = category;
-  }
-
-  if (search) {
-    where.OR = [
-      { title: { contains: search, mode: "insensitive" } },
-      { description: { contains: search, mode: "insensitive" } },
-      { location: { contains: search, mode: "insensitive" } },
-    ];
-  }
-
   let serialized: Array<Record<string, unknown>> = [];
 
   try {
-    const experiences = await prisma.experience.findMany({
-      where,
-      include: {
-        hotel: {
-          include: { rooms: { where: { isActive: true }, orderBy: { pricePerNight: "asc" } } },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+    const supabase = createAdminClient();
 
-    serialized = experiences.map((exp) => ({
+    let query = supabase
+      .from('Experience')
+      .select('*, hotel:Hotel(*, rooms:Room(*))')
+      .eq('isActive', true)
+      .order('createdAt', { ascending: false });
+
+    if (category) {
+      query = query.eq('category', category);
+    }
+
+    if (search) {
+      query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%,location.ilike.%${search}%`);
+    }
+
+    const { data: experiences, error } = await query;
+
+    if (error) throw error;
+
+    serialized = (experiences ?? []).map((exp) => ({
       ...exp,
       hotel: {
         ...exp.hotel,
-        rooms: exp.hotel.rooms.map((r) => ({
-          ...r,
-          pricePerNight: Number(r.pricePerNight),
-        })),
+        rooms: (exp.hotel?.rooms ?? [])
+          .filter((r: Room) => r.isActive)
+          .sort((a: Room, b: Room) => Number(a.pricePerNight) - Number(b.pricePerNight))
+          .map((r: Room) => ({
+            ...r,
+            pricePerNight: Number(r.pricePerNight),
+          })),
       },
     }));
   } catch {

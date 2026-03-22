@@ -43,9 +43,7 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const isAdminRoute = request.nextUrl.pathname.startsWith("/admin");
-  const isAuthRoute =
-    request.nextUrl.pathname.startsWith("/login") ||
-    request.nextUrl.pathname.startsWith("/register");
+  const isAuthRoute = request.nextUrl.pathname.startsWith("/login");
 
   if (isAdminRoute && !user) {
     const url = request.nextUrl.clone();

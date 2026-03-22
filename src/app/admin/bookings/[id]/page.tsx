@@ -3,13 +3,13 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { prisma } from "@/lib/prisma";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserStaffAssignments } from "@/lib/auth";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { STATUS_COLORS, STATUS_LABELS } from "@/types";
-import type { UserRole } from "@/types";
+import type { UserRole, BookingStatus } from "@/types";
 import { BookingDetailClient } from "./BookingDetailClient";
 import { BookingNotesForm } from "./BookingNotesForm";
 
@@ -29,17 +29,14 @@ export default async function BookingDetailPage({
   const assignments = await getUserStaffAssignments(user.id);
   if (assignments.length === 0) return null;
 
-  const booking = await prisma.booking.findUnique({
-    where: { id },
-    include: {
-      guest: true,
-      room: true,
-      experience: true,
-      hotel: { select: { name: true } },
-    },
-  });
+  const db = createAdminClient();
+  const { data: booking, error } = await db
+    .from('Booking')
+    .select('*, guest:Guest(*), room:Room(*), experience:Experience(*), hotel:Hotel(name)')
+    .eq('id', id)
+    .single();
 
-  if (!booking) {
+  if (error || !booking) {
     notFound();
   }
 
@@ -81,10 +78,10 @@ export default async function BookingDetailPage({
             <span
               className={cn(
                 "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold",
-                STATUS_COLORS[booking.status]
+                STATUS_COLORS[booking.status as BookingStatus]
               )}
             >
-              {STATUS_LABELS[booking.status]}
+              {STATUS_LABELS[booking.status as BookingStatus]}
             </span>
           </div>
           <p className="mt-1 text-sm text-white/40 font-sans">

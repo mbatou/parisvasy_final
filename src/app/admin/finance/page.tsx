@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { prisma } from "@/lib/prisma";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserStaffAssignments } from "@/lib/auth";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { cn } from "@/lib/utils";
@@ -10,7 +10,7 @@ import { StatsCards } from "@/components/admin/StatsCards";
 import { RevenueChart } from "@/components/admin/RevenueChart";
 import { Badge } from "@/components/ui/Badge";
 import { STATUS_COLORS, STATUS_LABELS } from "@/types";
-import type { UserRole } from "@/types";
+import type { UserRole, BookingStatus } from "@/types";
 import {
   Table,
   TableHeader,
@@ -61,46 +61,35 @@ export default async function FinancePage({
   );
   const yearStart = new Date(now.getFullYear(), 0, 1);
 
-  // Fetch stats in parallel
-  const [thisMonthRev, lastMonthRev, ytdRev, totalBookingsCount] =
-    await Promise.all([
-      prisma.booking.aggregate({
-        where: {
-          hotelId,
-          createdAt: { gte: thisMonthStart, lte: thisMonthEnd },
-          status: { notIn: ["cancelled"] },
-        },
-        _sum: { roomTotal: true },
-      }),
-      prisma.booking.aggregate({
-        where: {
-          hotelId,
-          createdAt: { gte: lastMonthStart, lte: lastMonthEnd },
-          status: { notIn: ["cancelled"] },
-        },
-        _sum: { roomTotal: true },
-      }),
-      prisma.booking.aggregate({
-        where: {
-          hotelId,
-          createdAt: { gte: yearStart },
-          status: { notIn: ["cancelled"] },
-        },
-        _sum: { roomTotal: true },
-        _count: true,
-      }),
-      prisma.booking.count({
-        where: {
-          hotelId,
-          createdAt: { gte: yearStart },
-          status: { notIn: ["cancelled"] },
-        },
-      }),
-    ]);
+  const db = createAdminClient();
 
-  const thisMonth = Number(thisMonthRev._sum.roomTotal ?? 0);
-  const lastMonth = Number(lastMonthRev._sum.roomTotal ?? 0);
-  const ytd = Number(ytdRev._sum.roomTotal ?? 0);
+  // Fetch all non-cancelled bookings for this hotel from the start of the year
+  // to avoid 12+ separate queries for the chart
+  const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+  const { data: allBookings } = await db
+    .from('Booking')
+    .select('roomTotal, createdAt, status')
+    .eq('hotelId', hotelId)
+    .gte('createdAt', twelveMonthsAgo.toISOString())
+    .not('status', 'eq', 'cancelled');
+
+  const bookings = allBookings ?? [];
+
+  // Compute stats from the fetched data
+  const thisMonthBookings = bookings.filter(
+    (b) => new Date(b.createdAt) >= thisMonthStart && new Date(b.createdAt) <= thisMonthEnd
+  );
+  const lastMonthBookings = bookings.filter(
+    (b) => new Date(b.createdAt) >= lastMonthStart && new Date(b.createdAt) <= lastMonthEnd
+  );
+  const ytdBookings = bookings.filter(
+    (b) => new Date(b.createdAt) >= yearStart
+  );
+
+  const thisMonth = thisMonthBookings.reduce((sum, b) => sum + Number(b.roomTotal ?? 0), 0);
+  const lastMonth = lastMonthBookings.reduce((sum, b) => sum + Number(b.roomTotal ?? 0), 0);
+  const ytd = ytdBookings.reduce((sum, b) => sum + Number(b.roomTotal ?? 0), 0);
+  const totalBookingsCount = ytdBookings.length;
   const avgBookingValue =
     totalBookingsCount > 0 ? ytd / totalBookingsCount : 0;
   const monthGrowth =
@@ -147,37 +136,28 @@ export default async function FinancePage({
       year: "2-digit",
     });
 
-    const mRev = await prisma.booking.aggregate({
-      where: {
-        hotelId,
-        createdAt: { gte: mStart, lte: mEnd },
-        status: { notIn: ["cancelled"] },
-      },
-      _sum: { roomTotal: true },
-      _count: true,
+    const monthBookings = bookings.filter((b) => {
+      const d = new Date(b.createdAt);
+      return d >= mStart && d <= mEnd;
     });
 
     monthlyData.push({
       month: monthLabel,
-      revenue: Number(mRev._sum.roomTotal ?? 0),
-      bookings: mRev._count,
+      revenue: monthBookings.reduce((sum, b) => sum + Number(b.roomTotal ?? 0), 0),
+      bookings: monthBookings.length,
     });
   }
 
   // Recent financial bookings
-  const financialBookings = await prisma.booking.findMany({
-    where: {
-      hotelId,
-      status: { notIn: ["cancelled"] },
-    },
-    include: {
-      guest: { select: { firstName: true, lastName: true } },
-      room: { select: { name: true } },
-      experience: { select: { title: true } },
-    },
-    orderBy: { createdAt: "desc" },
-    take: 25,
-  });
+  const { data: financialBookingsData } = await db
+    .from('Booking')
+    .select('*, guest:Guest(firstName, lastName), room:Room(name), experience:Experience(title)')
+    .eq('hotelId', hotelId)
+    .not('status', 'eq', 'cancelled')
+    .order('createdAt', { ascending: false })
+    .limit(25);
+
+  const financialBookings = financialBookingsData ?? [];
 
   return (
     <div className="space-y-8">
@@ -268,10 +248,10 @@ export default async function FinancePage({
                     <span
                       className={cn(
                         "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold",
-                        STATUS_COLORS[booking.status]
+                        STATUS_COLORS[booking.status as BookingStatus]
                       )}
                     >
-                      {STATUS_LABELS[booking.status]}
+                      {STATUS_LABELS[booking.status as BookingStatus]}
                     </span>
                   </TableCell>
                 </TableRow>

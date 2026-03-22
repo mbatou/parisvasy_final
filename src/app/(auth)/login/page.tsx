@@ -2,7 +2,6 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -12,7 +11,7 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect");
 
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -24,6 +23,7 @@ function LoginForm() {
 
     try {
       const supabase = createClient();
+      const email = `${username.toLowerCase().trim()}@parisvasy.com`;
 
       const { data, error: signInError } =
         await supabase.auth.signInWithPassword({
@@ -77,13 +77,13 @@ function LoginForm() {
 
       <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-5">
         <Input
-          label="Email"
-          type="email"
-          placeholder="you@example.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          label="Username"
+          type="text"
+          placeholder="your username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
           required
-          autoComplete="email"
+          autoComplete="username"
         />
         <Input
           label="Password"
@@ -100,13 +100,7 @@ function LoginForm() {
       </form>
 
       <p className="mt-6 text-center text-sm text-white/40 font-light">
-        Don&apos;t have an account?{" "}
-        <Link
-          href="/register"
-          className="font-medium text-gold hover:text-gold-light"
-        >
-          Register
-        </Link>
+        Contact your administrator to get access.
       </p>
     </div>
   );

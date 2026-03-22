@@ -1,5 +1,3 @@
-import type { Decimal } from "@prisma/client/runtime/library";
-
 export type UserRole =
   | "super_admin"
   | "hotel_manager"
@@ -63,7 +61,7 @@ export interface Room {
   maxGuests: number;
   amenities: string[];
   images: string[];
-  pricePerNight: Decimal | number | string;
+  pricePerNight: number | string;
   totalRooms: number;
   isActive: boolean;
   createdAt: Date;
@@ -109,7 +107,7 @@ export interface Booking {
   checkOut: Date;
   nights: number;
   guestCount: number;
-  roomTotal: Decimal | number | string;
+  roomTotal: number | string;
   status: BookingStatus;
   stripeSetupIntentId: string | null;
   stripePaymentMethodId: string | null;

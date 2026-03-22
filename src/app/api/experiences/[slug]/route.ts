@@ -1,32 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const supabase = createAdminClient();
     const { slug } = await params;
 
-    const experience = await prisma.experience.findUnique({
-      where: { slug },
-      include: {
-        hotel: {
-          include: {
-            rooms: {
-              where: { isActive: true },
-              orderBy: { pricePerNight: "asc" },
-            },
-          },
-        },
-      },
-    });
+    const { data: experience, error } = await supabase
+      .from("Experience")
+      .select("*, hotel:Hotel(*, rooms:Room(*))")
+      .eq("slug", slug)
+      .single();
 
-    if (!experience) {
+    if (error || !experience) {
       return NextResponse.json(
         { error: "Experience not found" },
         { status: 404 }
       );
+    }
+
+    // Post-process to filter active rooms and sort by price
+    if (experience.hotel && experience.hotel.rooms) {
+      experience.hotel.rooms = experience.hotel.rooms
+        .filter((r: { isActive: boolean }) => r.isActive)
+        .sort((a: { pricePerNight: number }, b: { pricePerNight: number }) => a.pricePerNight - b.pricePerNight);
     }
 
     return NextResponse.json(experience);
@@ -44,20 +44,25 @@ export async function PATCH(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const supabase = createAdminClient();
     const { slug } = await params;
     const body = await request.json();
 
-    const experience = await prisma.experience.update({
-      where: { slug },
-      data: {
-        ...body,
-        flashStart: body.flashStart ? new Date(body.flashStart) : undefined,
-        flashEnd: body.flashEnd ? new Date(body.flashEnd) : undefined,
-      },
-      include: {
-        hotel: true,
-      },
-    });
+    const updateData = {
+      ...body,
+      updatedAt: new Date().toISOString(),
+      ...(body.flashStart ? { flashStart: new Date(body.flashStart).toISOString() } : {}),
+      ...(body.flashEnd ? { flashEnd: new Date(body.flashEnd).toISOString() } : {}),
+    };
+
+    const { data: experience, error } = await supabase
+      .from("Experience")
+      .update(updateData)
+      .eq("slug", slug)
+      .select("*, hotel:Hotel(*)")
+      .single();
+
+    if (error) throw error;
 
     return NextResponse.json(experience);
   } catch (error) {
@@ -74,11 +79,15 @@ export async function DELETE(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const supabase = createAdminClient();
     const { slug } = await params;
 
-    await prisma.experience.delete({
-      where: { slug },
-    });
+    const { error } = await supabase
+      .from("Experience")
+      .delete()
+      .eq("slug", slug);
+
+    if (error) throw error;
 
     return NextResponse.json({ success: true });
   } catch (error) {

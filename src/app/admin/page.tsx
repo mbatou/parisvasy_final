@@ -11,7 +11,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { prisma } from "@/lib/prisma";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserStaffAssignments } from "@/lib/auth";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { StatsCards } from "@/components/admin/StatsCards";
@@ -71,45 +71,52 @@ export default async function AdminDashboardPage({
   }> = [];
 
   try {
-    const [ci, co, ab, mr, tr, or] = await Promise.all([
-      prisma.booking.count({
-        where: { hotelId, checkIn: { gte: today, lt: tomorrow }, status: { in: ["confirmed", "checked_in"] } },
-      }),
-      prisma.booking.count({
-        where: { hotelId, checkOut: { gte: today, lt: tomorrow }, status: { in: ["checked_in", "checked_out"] } },
-      }),
-      prisma.booking.count({
-        where: { hotelId, status: { in: ["confirmed", "checked_in"] } },
-      }),
-      prisma.booking.aggregate({
-        where: { hotelId, createdAt: { gte: monthStart, lte: monthEnd }, status: { notIn: ["cancelled"] } },
-        _sum: { roomTotal: true },
-      }),
-      prisma.room.aggregate({
-        where: { hotelId, isActive: true },
-        _sum: { totalRooms: true },
-      }),
-      prisma.booking.count({
-        where: { hotelId, status: "checked_in", checkIn: { lte: today }, checkOut: { gte: today } },
-      }),
-    ]);
-    todayCheckIns = ci;
-    todayCheckOuts = co;
-    activeBookings = ab;
-    revenue = Number(mr._sum.roomTotal ?? 0);
-    roomCount = tr._sum.totalRooms ?? 0;
-    occupiedRooms = or;
+    const db = createAdminClient();
 
-    recentBookings = await prisma.booking.findMany({
-      where: { hotelId },
-      include: {
-        guest: { select: { firstName: true, lastName: true } },
-        room: { select: { name: true } },
-        experience: { select: { title: true } },
-      },
-      orderBy: { createdAt: "desc" },
-      take: 10,
-    });
+    const [ciRes, coRes, abRes, mrRes, trRes, orRes] = await Promise.all([
+      db.from('Booking').select('id', { count: 'exact', head: true })
+        .eq('hotelId', hotelId)
+        .gte('checkIn', today.toISOString())
+        .lt('checkIn', tomorrow.toISOString())
+        .in('status', ['confirmed', 'checked_in']),
+      db.from('Booking').select('id', { count: 'exact', head: true })
+        .eq('hotelId', hotelId)
+        .gte('checkOut', today.toISOString())
+        .lt('checkOut', tomorrow.toISOString())
+        .in('status', ['checked_in', 'checked_out']),
+      db.from('Booking').select('id', { count: 'exact', head: true })
+        .eq('hotelId', hotelId)
+        .in('status', ['confirmed', 'checked_in']),
+      db.from('Booking').select('roomTotal')
+        .eq('hotelId', hotelId)
+        .gte('createdAt', monthStart.toISOString())
+        .lte('createdAt', monthEnd.toISOString())
+        .not('status', 'eq', 'cancelled'),
+      db.from('Room').select('totalRooms')
+        .eq('hotelId', hotelId)
+        .eq('isActive', true),
+      db.from('Booking').select('id', { count: 'exact', head: true })
+        .eq('hotelId', hotelId)
+        .eq('status', 'checked_in')
+        .lte('checkIn', today.toISOString())
+        .gte('checkOut', today.toISOString()),
+    ]);
+
+    todayCheckIns = ciRes.count ?? 0;
+    todayCheckOuts = coRes.count ?? 0;
+    activeBookings = abRes.count ?? 0;
+    revenue = (mrRes.data ?? []).reduce((sum: number, b: { roomTotal: unknown }) => sum + Number(b.roomTotal ?? 0), 0);
+    roomCount = (trRes.data ?? []).reduce((sum: number, r: { totalRooms: number }) => sum + (r.totalRooms ?? 0), 0);
+    occupiedRooms = orRes.count ?? 0;
+
+    const { data: recentData } = await db
+      .from('Booking')
+      .select('*, guest:Guest(firstName, lastName), room:Room(name), experience:Experience(title)')
+      .eq('hotelId', hotelId)
+      .order('createdAt', { ascending: false })
+      .limit(10);
+
+    recentBookings = (recentData ?? []) as typeof recentBookings;
   } catch {
     // Tables may not exist yet
   }

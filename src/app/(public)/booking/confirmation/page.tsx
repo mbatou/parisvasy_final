@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
+import { createAdminClient } from "@/lib/supabase/admin";
 import BookingConfirmation from "@/components/public/BookingConfirmation";
 import Link from "next/link";
 
@@ -19,17 +19,15 @@ export default async function ConfirmationPage({
     notFound();
   }
 
-  const booking = await prisma.booking.findUnique({
-    where: { id: bookingId },
-    include: {
-      hotel: true,
-      room: true,
-      experience: true,
-      guest: true,
-    },
-  });
+  const supabase = createAdminClient();
 
-  if (!booking) {
+  const { data: booking, error } = await supabase
+    .from('Booking')
+    .select('*, hotel:Hotel(*), room:Room(*), experience:Experience(*), guest:Guest(*)')
+    .eq('id', bookingId)
+    .single();
+
+  if (error || !booking) {
     notFound();
   }
 
@@ -40,12 +38,12 @@ export default async function ConfirmationPage({
       typeof booking.roomTotal === "number"
         ? booking.roomTotal
         : Number(booking.roomTotal),
-    checkIn: booking.checkIn.toISOString(),
-    checkOut: booking.checkOut.toISOString(),
-    createdAt: booking.createdAt.toISOString(),
-    updatedAt: booking.updatedAt.toISOString(),
-    checkedInAt: booking.checkedInAt?.toISOString() ?? null,
-    checkedOutAt: booking.checkedOutAt?.toISOString() ?? null,
+    checkIn: typeof booking.checkIn === "string" ? booking.checkIn : new Date(booking.checkIn).toISOString(),
+    checkOut: typeof booking.checkOut === "string" ? booking.checkOut : new Date(booking.checkOut).toISOString(),
+    createdAt: typeof booking.createdAt === "string" ? booking.createdAt : new Date(booking.createdAt).toISOString(),
+    updatedAt: typeof booking.updatedAt === "string" ? booking.updatedAt : new Date(booking.updatedAt).toISOString(),
+    checkedInAt: booking.checkedInAt ? (typeof booking.checkedInAt === "string" ? booking.checkedInAt : new Date(booking.checkedInAt).toISOString()) : null,
+    checkedOutAt: booking.checkedOutAt ? (typeof booking.checkedOutAt === "string" ? booking.checkedOutAt : new Date(booking.checkedOutAt).toISOString()) : null,
     hotel: booking.hotel
       ? {
           name: booking.hotel.name,

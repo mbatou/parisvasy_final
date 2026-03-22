@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
-import { prisma } from "@/lib/prisma";
+import { createAdminClient } from "@/lib/supabase/admin";
 import Stripe from "stripe";
 
 export async function POST(request: NextRequest) {
@@ -37,6 +37,8 @@ export async function POST(request: NextRequest) {
       const bookingId = setupIntent.metadata?.bookingId;
 
       if (bookingId) {
+        const supabase = createAdminClient();
+
         // Retrieve payment method details for card info
         const paymentMethodId =
           typeof setupIntent.payment_method === "string"
@@ -53,15 +55,16 @@ export async function POST(request: NextRequest) {
           cardBrand = paymentMethod.card?.brand;
         }
 
-        await prisma.booking.update({
-          where: { id: bookingId },
-          data: {
+        await supabase
+          .from("Booking")
+          .update({
             stripePaymentMethodId: paymentMethodId,
             cardLast4: cardLast4 ?? null,
             cardBrand: cardBrand ?? null,
             warrantyCollected: true,
-          },
-        });
+            updatedAt: new Date().toISOString(),
+          })
+          .eq("id", bookingId);
       }
     }
 

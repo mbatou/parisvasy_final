@@ -1,31 +1,54 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const supabase = createAdminClient();
     const { id } = await params;
 
-    const hotel = await prisma.hotel.findUnique({
-      where: { id },
-      include: {
-        rooms: { where: { isActive: true }, orderBy: { pricePerNight: "asc" } },
-        experiences: { where: { isActive: true }, orderBy: { createdAt: "desc" } },
-        _count: {
-          select: {
-            bookings: true,
-          },
-        },
-      },
-    });
+    const { data: hotel, error } = await supabase
+      .from("Hotel")
+      .select("*")
+      .eq("id", id)
+      .single();
 
-    if (!hotel) {
+    if (error || !hotel) {
       return NextResponse.json({ error: "Hotel not found" }, { status: 404 });
     }
 
-    return NextResponse.json(hotel);
+    // Fetch active rooms
+    const { data: rooms } = await supabase
+      .from("Room")
+      .select("*")
+      .eq("hotelId", id)
+      .eq("isActive", true)
+      .order("pricePerNight", { ascending: true });
+
+    // Fetch active experiences
+    const { data: experiences } = await supabase
+      .from("Experience")
+      .select("*")
+      .eq("hotelId", id)
+      .eq("isActive", true)
+      .order("createdAt", { ascending: false });
+
+    // Fetch bookings count
+    const { count: bookingsCount } = await supabase
+      .from("Booking")
+      .select("id", { count: "exact", head: true })
+      .eq("hotelId", id);
+
+    return NextResponse.json({
+      ...hotel,
+      rooms: rooms ?? [],
+      experiences: experiences ?? [],
+      _count: {
+        bookings: bookingsCount ?? 0,
+      },
+    });
   } catch (error) {
     console.error("Error fetching hotel:", error);
     return NextResponse.json(
@@ -40,13 +63,18 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const supabase = createAdminClient();
     const { id } = await params;
     const body = await request.json();
 
-    const hotel = await prisma.hotel.update({
-      where: { id },
-      data: body,
-    });
+    const { data: hotel, error } = await supabase
+      .from("Hotel")
+      .update({ ...body, updatedAt: new Date().toISOString() })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) throw error;
 
     return NextResponse.json(hotel);
   } catch (error) {
@@ -63,11 +91,15 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const supabase = createAdminClient();
     const { id } = await params;
 
-    await prisma.hotel.delete({
-      where: { id },
-    });
+    const { error } = await supabase
+      .from("Hotel")
+      .delete()
+      .eq("id", id);
+
+    if (error) throw error;
 
     return NextResponse.json({ success: true });
   } catch (error) {

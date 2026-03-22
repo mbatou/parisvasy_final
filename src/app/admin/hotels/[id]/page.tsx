@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { HotelEditClient } from "./HotelEditClient";
 
 export default async function EditHotelPage({
@@ -11,11 +11,14 @@ export default async function EditHotelPage({
 }) {
   const { id } = await params;
 
-  const hotel = await prisma.hotel.findUnique({
-    where: { id },
-  });
+  const db = createAdminClient();
+  const { data: hotel, error } = await db
+    .from('Hotel')
+    .select('*')
+    .eq('id', id)
+    .single();
 
-  if (!hotel) {
+  if (error || !hotel) {
     notFound();
   }
 
