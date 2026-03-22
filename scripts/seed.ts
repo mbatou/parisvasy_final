@@ -31,8 +31,38 @@ async function upsertByUnique<T extends Record<string, unknown>>(
   return created;
 }
 
+async function cleanupUsers() {
+  console.log("Cleaning up existing users...");
+
+  // Delete all staff assignments
+  await supabase.from("StaffAssignment").delete().neq("id", "");
+  console.log("  Cleared StaffAssignment");
+
+  // Delete all bookings (they reference guests)
+  await supabase.from("Booking").delete().neq("id", "");
+  console.log("  Cleared Booking");
+
+  // Delete all guests
+  await supabase.from("Guest").delete().neq("id", "");
+  console.log("  Cleared Guest");
+
+  // Delete all auth users
+  const { data: authUsers } = await supabase.auth.admin.listUsers();
+  if (authUsers?.users) {
+    for (const user of authUsers.users) {
+      await supabase.auth.admin.deleteUser(user.id);
+      console.log(`  Deleted auth user: ${user.email}`);
+    }
+  }
+
+  console.log("Cleanup complete.\n");
+}
+
 async function main() {
-  console.log("Seeding database...");
+  console.log("Seeding database...\n");
+
+  // Clean up everything first
+  await cleanupUsers();
 
   // Create Hotel
   const hotel = await upsertByUnique("Hotel", {
