@@ -9,6 +9,17 @@ const nextConfig = {
       },
     ],
   },
+  // Prisma needs this for serverless deployment
+  outputFileTracingIncludes: {
+    '/api/**': ['./node_modules/.prisma/client/**'],
+    '/admin/**': ['./node_modules/.prisma/client/**'],
+  },
+  // Stripe webhook needs raw body
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '2mb',
+    },
+  },
 };
 
 module.exports = nextConfig;
