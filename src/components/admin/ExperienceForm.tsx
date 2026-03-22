@@ -171,16 +171,16 @@ export function ExperienceForm({ experience, onSubmit }: ExperienceFormProps) {
       </div>
 
       <div>
-        <label className="text-sm font-medium text-navy-500">Description</label>
+        <label className="text-sm font-light text-white/80">Description</label>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={4}
-          className="mt-1.5 w-full rounded-lg border border-navy-100 bg-white px-3 py-2 text-sm text-navy-500 placeholder:text-navy-200 focus:border-vermillion-500 focus:outline-none focus:ring-2 focus:ring-vermillion-300"
+          className="mt-1.5 w-full rounded border border-white/[0.06] bg-pv-black-80 px-3 py-2 text-sm font-light text-white/80 placeholder:text-white/30 focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/30"
           placeholder="Describe the experience..."
         />
         {errors.description && (
-          <p className="mt-1 text-xs text-red-600">{errors.description}</p>
+          <p className="mt-1 text-xs text-red-400">{errors.description}</p>
         )}
       </div>
 
@@ -195,7 +195,7 @@ export function ExperienceForm({ experience, onSubmit }: ExperienceFormProps) {
 
       {/* Inclusions */}
       <div>
-        <label className="text-sm font-medium text-navy-500">Inclusions</label>
+        <label className="text-sm font-light text-white/80">Inclusions</label>
         <div className="mt-1.5 flex gap-2">
           <input
             type="text"
@@ -208,7 +208,7 @@ export function ExperienceForm({ experience, onSubmit }: ExperienceFormProps) {
               }
             }}
             placeholder="Add inclusion and press Enter"
-            className="h-10 flex-1 rounded-lg border border-navy-100 bg-white px-3 text-sm text-navy-500 placeholder:text-navy-200 focus:border-vermillion-500 focus:outline-none focus:ring-2 focus:ring-vermillion-300"
+            className="h-10 flex-1 rounded border border-white/[0.06] bg-pv-black-80 px-3 text-sm font-light text-white/80 placeholder:text-white/30 focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/30"
           />
           <Button type="button" variant="outline" size="md" onClick={addInclusion}>
             Add
@@ -219,13 +219,13 @@ export function ExperienceForm({ experience, onSubmit }: ExperienceFormProps) {
             {inclusions.map((item) => (
               <span
                 key={item}
-                className="inline-flex items-center gap-1 rounded-full bg-cream-100 px-3 py-1 text-xs font-medium text-navy-500"
+                className="inline-flex items-center gap-1 rounded-full bg-white/[0.08] px-3 py-1 text-xs font-light text-white/80"
               >
                 {item}
                 <button
                   type="button"
                   onClick={() => removeInclusion(item)}
-                  className="rounded-full p-0.5 hover:bg-cream-200"
+                  className="rounded-full p-0.5 hover:bg-white/[0.04]"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -237,22 +237,22 @@ export function ExperienceForm({ experience, onSubmit }: ExperienceFormProps) {
 
       {/* Image upload placeholder */}
       <div>
-        <label className="text-sm font-medium text-navy-500">Images</label>
-        <div className="mt-1.5 flex h-32 items-center justify-center rounded-lg border-2 border-dashed border-navy-100 bg-cream-50 text-sm text-navy-300">
+        <label className="text-sm font-light text-white/80">Images</label>
+        <div className="mt-1.5 flex h-32 items-center justify-center rounded border-2 border-dashed border-white/[0.06] bg-pv-black-90 text-sm font-light text-white/40">
           Image uploader placeholder
         </div>
       </div>
 
       {/* Flash deal */}
-      <div className="space-y-3 rounded-lg border border-navy-100 p-4">
+      <div className="space-y-3 rounded border border-white/[0.06] p-4">
         <label className="flex items-center gap-3">
           <input
             type="checkbox"
             checked={isFlash}
             onChange={(e) => setIsFlash(e.target.checked)}
-            className="h-4 w-4 rounded border-navy-200 text-vermillion-500 focus:ring-vermillion-300"
+            className="h-4 w-4 rounded border-white/[0.06] text-gold focus:ring-gold/30"
           />
-          <span className="text-sm font-medium text-navy-500">Flash Deal</span>
+          <span className="text-sm font-light text-white/80">Flash Deal</span>
         </label>
         {isFlash && (
           <div className="grid gap-4 md:grid-cols-2">
@@ -278,9 +278,9 @@ export function ExperienceForm({ experience, onSubmit }: ExperienceFormProps) {
           type="checkbox"
           checked={isActive}
           onChange={(e) => setIsActive(e.target.checked)}
-          className="h-4 w-4 rounded border-navy-200 text-vermillion-500 focus:ring-vermillion-300"
+          className="h-4 w-4 rounded border-white/[0.06] text-gold focus:ring-gold/30"
         />
-        <span className="text-sm font-medium text-navy-500">Active</span>
+        <span className="text-sm font-light text-white/80">Active</span>
       </label>
 
       <div className="flex justify-end">

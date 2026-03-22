@@ -30,7 +30,7 @@ export function BookingDetailClient({
 
   if (!canAccess(userRole, "check_in_out")) {
     return (
-      <p className="text-sm text-navy-300">
+      <p className="text-sm text-white/40">
         You do not have permission to perform check-in/out actions.
       </p>
     );

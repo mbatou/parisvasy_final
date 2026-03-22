@@ -15,9 +15,17 @@ import { prisma } from "@/lib/prisma";
 import { getUserStaffAssignments } from "@/lib/auth";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { StatsCards } from "@/components/admin/StatsCards";
-import { STATUS_COLORS, STATUS_LABELS } from "@/types";
-import type { UserRole } from "@/types";
-import { cn } from "@/lib/utils";
+import { STATUS_LABELS } from "@/types";
+import type { UserRole, BookingStatus } from "@/types";
+
+const STATUS_BADGE_COLORS: Record<BookingStatus, string> = {
+  pending: "bg-yellow-500/15 text-yellow-400",
+  confirmed: "bg-blue-500/15 text-blue-400",
+  checked_in: "bg-green-500/15 text-green-400",
+  checked_out: "bg-white/10 text-white/50",
+  cancelled: "bg-red-500/15 text-red-400",
+  no_show: "bg-red-500/15 text-red-400",
+};
 
 export default async function AdminDashboardPage({
   searchParams,
@@ -32,7 +40,12 @@ export default async function AdminDashboardPage({
 
   if (!user) return null;
 
-  const assignments = await getUserStaffAssignments(user.id);
+  let assignments: Array<{ role: string; hotelId: string }> = [];
+  try {
+    assignments = await getUserStaffAssignments(user.id);
+  } catch {
+    // Tables may not exist
+  }
   if (assignments.length === 0) return null;
 
   const role = assignments[0].role as UserRole;
@@ -45,35 +58,31 @@ export default async function AdminDashboardPage({
   const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
   const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59);
 
-  // Fetch stats in parallel
-  const [todayCheckIns, todayCheckOuts, activeBookings, monthlyRevenue, totalRooms, occupiedRooms] =
-    await Promise.all([
+  let todayCheckIns = 0, todayCheckOuts = 0, activeBookings = 0, revenue = 0, roomCount = 0, occupiedRooms = 0;
+  let recentBookings: Array<{
+    id: string;
+    reference: string;
+    checkIn: Date;
+    roomTotal: unknown;
+    status: BookingStatus;
+    guest: { firstName: string; lastName: string } | null;
+    room: { name: string } | null;
+    experience: { title: string } | null;
+  }> = [];
+
+  try {
+    const [ci, co, ab, mr, tr, or] = await Promise.all([
       prisma.booking.count({
-        where: {
-          hotelId,
-          checkIn: { gte: today, lt: tomorrow },
-          status: { in: ["confirmed", "checked_in"] },
-        },
+        where: { hotelId, checkIn: { gte: today, lt: tomorrow }, status: { in: ["confirmed", "checked_in"] } },
       }),
       prisma.booking.count({
-        where: {
-          hotelId,
-          checkOut: { gte: today, lt: tomorrow },
-          status: { in: ["checked_in", "checked_out"] },
-        },
+        where: { hotelId, checkOut: { gte: today, lt: tomorrow }, status: { in: ["checked_in", "checked_out"] } },
       }),
       prisma.booking.count({
-        where: {
-          hotelId,
-          status: { in: ["confirmed", "checked_in"] },
-        },
+        where: { hotelId, status: { in: ["confirmed", "checked_in"] } },
       }),
       prisma.booking.aggregate({
-        where: {
-          hotelId,
-          createdAt: { gte: monthStart, lte: monthEnd },
-          status: { notIn: ["cancelled"] },
-        },
+        where: { hotelId, createdAt: { gte: monthStart, lte: monthEnd }, status: { notIn: ["cancelled"] } },
         _sum: { roomTotal: true },
       }),
       prisma.room.aggregate({
@@ -81,17 +90,30 @@ export default async function AdminDashboardPage({
         _sum: { totalRooms: true },
       }),
       prisma.booking.count({
-        where: {
-          hotelId,
-          status: "checked_in",
-          checkIn: { lte: today },
-          checkOut: { gte: today },
-        },
+        where: { hotelId, status: "checked_in", checkIn: { lte: today }, checkOut: { gte: today } },
       }),
     ]);
+    todayCheckIns = ci;
+    todayCheckOuts = co;
+    activeBookings = ab;
+    revenue = Number(mr._sum.roomTotal ?? 0);
+    roomCount = tr._sum.totalRooms ?? 0;
+    occupiedRooms = or;
 
-  const revenue = Number(monthlyRevenue._sum.roomTotal ?? 0);
-  const roomCount = totalRooms._sum.totalRooms ?? 0;
+    recentBookings = await prisma.booking.findMany({
+      where: { hotelId },
+      include: {
+        guest: { select: { firstName: true, lastName: true } },
+        room: { select: { name: true } },
+        experience: { select: { title: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    });
+  } catch {
+    // Tables may not exist yet
+  }
+
   const occupancyRate = roomCount > 0 ? Math.round((occupiedRooms / roomCount) * 100) : 0;
 
   const stats = [
@@ -102,24 +124,12 @@ export default async function AdminDashboardPage({
     { label: "Occupancy Rate", value: `${occupancyRate}%`, icon: BarChart3 },
   ];
 
-  // Recent bookings
-  const recentBookings = await prisma.booking.findMany({
-    where: { hotelId },
-    include: {
-      guest: { select: { firstName: true, lastName: true } },
-      room: { select: { name: true } },
-      experience: { select: { title: true } },
-    },
-    orderBy: { createdAt: "desc" },
-    take: 10,
-  });
-
   return (
     <div className="space-y-8">
       {/* Page title */}
       <div>
-        <h1 className="text-2xl font-bold text-navy-500 font-serif">Dashboard</h1>
-        <p className="mt-1 text-sm text-navy-300 font-sans">
+        <h1 className="font-serif text-2xl text-white font-light">Dashboard</h1>
+        <p className="mt-1 text-sm text-white/40 font-light">
           Overview of today&apos;s operations and recent activity.
         </p>
       </div>
@@ -129,118 +139,80 @@ export default async function AdminDashboardPage({
 
       {/* Quick actions */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <Link
-          href="/admin/bookings"
-          className="flex items-center gap-3 rounded-xl border border-navy-50 bg-white p-4 shadow-sm hover:border-vermillion-200 transition-colors"
-        >
-          <CalendarCheck className="h-5 w-5 text-vermillion-500" />
-          <span className="text-sm font-semibold text-navy-500 font-sans">
-            All Bookings
-          </span>
-        </Link>
-        <Link
-          href="/admin/experiences/new"
-          className="flex items-center gap-3 rounded-xl border border-navy-50 bg-white p-4 shadow-sm hover:border-vermillion-200 transition-colors"
-        >
-          <Plus className="h-5 w-5 text-vermillion-500" />
-          <span className="text-sm font-semibold text-navy-500 font-sans">
-            New Experience
-          </span>
-        </Link>
-        <Link
-          href="/admin/rooms/new"
-          className="flex items-center gap-3 rounded-xl border border-navy-50 bg-white p-4 shadow-sm hover:border-vermillion-200 transition-colors"
-        >
-          <Plus className="h-5 w-5 text-vermillion-500" />
-          <span className="text-sm font-semibold text-navy-500 font-sans">
-            New Room
-          </span>
-        </Link>
-        <Link
-          href="/admin/finance"
-          className="flex items-center gap-3 rounded-xl border border-navy-50 bg-white p-4 shadow-sm hover:border-vermillion-200 transition-colors"
-        >
-          <BarChart3 className="h-5 w-5 text-vermillion-500" />
-          <span className="text-sm font-semibold text-navy-500 font-sans">
-            Finance
-          </span>
-        </Link>
+        {[
+          { href: "/admin/bookings", icon: CalendarCheck, label: "All Bookings" },
+          { href: "/admin/experiences/new", icon: Plus, label: "New Experience" },
+          { href: "/admin/rooms/new", icon: Plus, label: "New Room" },
+          { href: "/admin/finance", icon: BarChart3, label: "Finance" },
+        ].map((action) => (
+          <Link
+            key={action.href}
+            href={action.href}
+            className="flex items-center gap-3 border border-white/[0.06] bg-pv-black-80 p-4 hover:border-gold/20 transition-all"
+          >
+            <action.icon className="h-5 w-5 text-gold" />
+            <span className="text-[11px] uppercase tracking-wide font-medium text-white/70">
+              {action.label}
+            </span>
+          </Link>
+        ))}
       </div>
 
       {/* Recent bookings */}
-      <div className="rounded-xl border border-navy-50 bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-navy-50 px-6 py-4">
-          <h2 className="text-lg font-bold text-navy-500 font-serif">
+      <div className="border border-white/[0.06] bg-pv-black-80">
+        <div className="flex items-center justify-between border-b border-white/[0.06] px-6 py-4">
+          <h2 className="font-serif text-lg text-white font-light">
             Recent Bookings
           </h2>
           <Link
             href="/admin/bookings"
-            className="inline-flex items-center gap-1 text-sm font-semibold text-vermillion-500 hover:text-vermillion-600 transition-colors font-sans"
+            className="inline-flex items-center gap-1 text-[11px] uppercase tracking-wide text-gold hover:text-gold-light transition-colors"
           >
-            View all <ArrowRight className="h-4 w-4" />
+            View all <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm font-sans">
+          <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-navy-50 text-left">
-                <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-navy-300">
-                  Ref
-                </th>
-                <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-navy-300">
-                  Guest
-                </th>
-                <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-navy-300">
-                  Experience
-                </th>
-                <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-navy-300">
-                  Room
-                </th>
-                <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-navy-300">
-                  Check-in
-                </th>
-                <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-navy-300">
-                  Total
-                </th>
-                <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-navy-300">
-                  Status
-                </th>
+              <tr className="border-b border-white/[0.04] text-left">
+                {["Ref", "Guest", "Experience", "Room", "Check-in", "Total", "Status"].map((h) => (
+                  <th key={h} className="px-6 py-3 text-[10px] font-medium uppercase tracking-luxury text-gold/50">
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-navy-50">
+            <tbody className="divide-y divide-white/[0.04]">
               {recentBookings.map((booking) => (
-                <tr key={booking.id} className="hover:bg-cream-50 transition-colors">
+                <tr key={booking.id} className="hover:bg-white/[0.02] transition-colors">
                   <td className="px-6 py-3">
                     <Link
                       href={`/admin/bookings/${booking.id}`}
-                      className="font-mono text-xs text-vermillion-500 hover:underline"
+                      className="font-mono text-xs text-gold hover:text-gold-light"
                     >
                       {booking.reference}
                     </Link>
                   </td>
-                  <td className="px-6 py-3 text-navy-500">
+                  <td className="px-6 py-3 text-white/70 font-light">
                     {booking.guest
                       ? `${booking.guest.firstName} ${booking.guest.lastName}`
                       : "\u2014"}
                   </td>
-                  <td className="px-6 py-3 text-navy-400">
+                  <td className="px-6 py-3 text-white/50 font-light">
                     {booking.experience?.title ?? "\u2014"}
                   </td>
-                  <td className="px-6 py-3 text-navy-400">
+                  <td className="px-6 py-3 text-white/50 font-light">
                     {booking.room?.name ?? "\u2014"}
                   </td>
-                  <td className="px-6 py-3 text-navy-400">
+                  <td className="px-6 py-3 text-white/50 font-light">
                     {formatDate(booking.checkIn)}
                   </td>
-                  <td className="px-6 py-3 font-medium text-navy-500">
+                  <td className="px-6 py-3 text-gold font-light">
                     {formatCurrency(Number(booking.roomTotal))}
                   </td>
                   <td className="px-6 py-3">
                     <span
-                      className={cn(
-                        "inline-block rounded-full px-2 py-0.5 text-xs font-semibold",
-                        STATUS_COLORS[booking.status]
-                      )}
+                      className={`inline-block px-2 py-0.5 text-[9px] uppercase tracking-wide font-medium ${STATUS_BADGE_COLORS[booking.status]}`}
                     >
                       {STATUS_LABELS[booking.status]}
                     </span>
@@ -251,9 +223,9 @@ export default async function AdminDashboardPage({
                 <tr>
                   <td
                     colSpan={7}
-                    className="px-6 py-8 text-center text-navy-300"
+                    className="px-6 py-12 text-center text-white/30 font-light"
                   >
-                    No bookings yet.
+                    No bookings yet. Create your first experience to get started.
                   </td>
                 </tr>
               )}

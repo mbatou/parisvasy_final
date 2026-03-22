@@ -40,7 +40,7 @@ export function BookingNotesForm({
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
         rows={4}
-        className="w-full rounded-lg border border-navy-100 bg-white px-3 py-2 text-sm text-navy-500 placeholder:text-navy-200 focus:border-vermillion-500 focus:outline-none focus:ring-2 focus:ring-vermillion-300"
+        className="w-full rounded-lg border border-white/[0.06] bg-pv-black-80 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/30"
         placeholder="Add notes about this booking..."
       />
       <div className="flex items-center gap-2">

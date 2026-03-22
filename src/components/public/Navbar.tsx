@@ -37,7 +37,7 @@ export default function Navbar() {
   const supabase = createClient();
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 10);
+    const handleScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -85,13 +85,18 @@ export default function Navbar() {
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 w-full bg-white transition-shadow duration-300",
-        scrolled && "shadow-md"
+        "fixed top-0 z-50 w-full transition-all duration-500",
+        scrolled
+          ? "bg-[rgba(10,10,10,0.92)] backdrop-blur-[24px] border-b border-white/[0.06]"
+          : "bg-transparent"
       )}
     >
-      <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+      <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
         {/* Logo */}
-        <Link href="/" className="font-serif text-2xl text-vermillion">
+        <Link
+          href="/"
+          className="font-sans text-[15px] font-semibold tracking-[4px] text-gold"
+        >
           PARISVASY
         </Link>
 
@@ -101,7 +106,7 @@ export default function Navbar() {
             <li key={link.href}>
               <Link
                 href={link.href}
-                className="text-sm font-medium text-ink-400 transition-colors hover:text-vermillion"
+                className="micro-label text-white/60 transition-colors hover:text-gold link-underline"
               >
                 {link.label}
               </Link>
@@ -110,30 +115,30 @@ export default function Navbar() {
         </ul>
 
         {/* Desktop Right Side */}
-        <div className="hidden items-center gap-3 md:flex">
+        <div className="hidden items-center gap-4 md:flex">
           {isStaff && (
             <Link
-              href="/back-office"
-              className="flex items-center gap-1.5 rounded-lg border border-navy-100 px-3 py-1.5 text-sm font-medium text-navy transition-colors hover:bg-navy-50"
+              href="/admin"
+              className="micro-label flex items-center gap-1.5 border border-gold/25 px-4 py-2 text-gold transition-all hover:bg-gold hover:text-pv-black"
             >
-              <LayoutDashboard className="h-4 w-4" />
-              Back-office
+              <LayoutDashboard className="h-3.5 w-3.5" />
+              Back office
             </Link>
           )}
           {user ? (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
               <Link
-                href="/account"
-                className="flex items-center gap-1.5 text-sm font-medium text-ink-400 transition-colors hover:text-vermillion"
+                href="/admin"
+                className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-white/60 transition-colors hover:text-gold"
               >
-                <User className="h-4 w-4" />
+                <User className="h-3.5 w-3.5" />
                 {user.email?.split("@")[0] ?? "Account"}
               </Link>
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-ink-300 transition-colors hover:text-vermillion"
+                className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-white/40 transition-colors hover:text-gold"
               >
-                <LogOut className="h-4 w-4" />
+                <LogOut className="h-3.5 w-3.5" />
                 Logout
               </button>
             </div>
@@ -141,16 +146,16 @@ export default function Navbar() {
             <>
               <Link
                 href="/login"
-                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-ink-400 transition-colors hover:text-vermillion"
+                className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-white/60 transition-colors hover:text-gold"
               >
-                <LogIn className="h-4 w-4" />
+                <LogIn className="h-3.5 w-3.5" />
                 Login
               </Link>
               <Link
                 href="/register"
-                className="flex items-center gap-1.5 rounded-lg bg-vermillion px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-vermillion-600"
+                className="flex items-center gap-1.5 border border-gold px-4 py-2 text-[11px] uppercase tracking-wide text-gold transition-all hover:bg-gold hover:text-pv-black"
               >
-                <UserPlus className="h-4 w-4" />
+                <UserPlus className="h-3.5 w-3.5" />
                 Register
               </Link>
             </>
@@ -164,23 +169,23 @@ export default function Navbar() {
           aria-label="Toggle menu"
         >
           {mobileOpen ? (
-            <X className="h-6 w-6 text-ink" />
+            <X className="h-6 w-6 text-white" />
           ) : (
-            <Menu className="h-6 w-6 text-ink" />
+            <Menu className="h-6 w-6 text-white" />
           )}
         </button>
       </nav>
 
       {/* Mobile Menu */}
       {mobileOpen && (
-        <div className="border-t border-cream-200 bg-white px-4 pb-4 md:hidden">
-          <ul className="flex flex-col gap-2 py-3">
+        <div className="border-t border-white/[0.06] bg-pv-black-90 px-4 pb-6 md:hidden">
+          <ul className="flex flex-col gap-1 py-4">
             {NAV_LINKS.map((link) => (
               <li key={link.href}>
                 <Link
                   href={link.href}
                   onClick={() => setMobileOpen(false)}
-                  className="block rounded-lg px-3 py-2 text-sm font-medium text-ink-400 transition-colors hover:bg-cream"
+                  className="block px-3 py-2.5 text-[11px] uppercase tracking-wide text-white/60 transition-colors hover:text-gold"
                 >
                   {link.label}
                 </Link>
@@ -189,32 +194,32 @@ export default function Navbar() {
             {isStaff && (
               <li>
                 <Link
-                  href="/back-office"
+                  href="/admin"
                   onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-navy transition-colors hover:bg-cream"
+                  className="flex items-center gap-2 px-3 py-2.5 text-[11px] uppercase tracking-wide text-gold transition-colors hover:text-gold-light"
                 >
-                  <LayoutDashboard className="h-4 w-4" />
-                  Back-office
+                  <LayoutDashboard className="h-3.5 w-3.5" />
+                  Back office
                 </Link>
               </li>
             )}
           </ul>
-          <div className="flex flex-col gap-2 border-t border-cream-200 pt-3">
+          <div className="flex flex-col gap-2 border-t border-white/[0.06] pt-4">
             {user ? (
               <>
                 <Link
-                  href="/account"
+                  href="/admin"
                   onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-ink-400 hover:bg-cream"
+                  className="flex items-center gap-2 px-3 py-2.5 text-[11px] uppercase tracking-wide text-white/60 hover:text-gold"
                 >
-                  <User className="h-4 w-4" />
+                  <User className="h-3.5 w-3.5" />
                   {user.email?.split("@")[0] ?? "Account"}
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-ink-300 hover:bg-cream"
+                  className="flex items-center gap-2 px-3 py-2.5 text-[11px] uppercase tracking-wide text-white/40 hover:text-gold"
                 >
-                  <LogOut className="h-4 w-4" />
+                  <LogOut className="h-3.5 w-3.5" />
                   Logout
                 </button>
               </>
@@ -223,17 +228,17 @@ export default function Navbar() {
                 <Link
                   href="/login"
                   onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-ink-400 hover:bg-cream"
+                  className="flex items-center gap-2 px-3 py-2.5 text-[11px] uppercase tracking-wide text-white/60 hover:text-gold"
                 >
-                  <LogIn className="h-4 w-4" />
+                  <LogIn className="h-3.5 w-3.5" />
                   Login
                 </Link>
                 <Link
                   href="/register"
                   onClick={() => setMobileOpen(false)}
-                  className="flex items-center justify-center gap-1.5 rounded-lg bg-vermillion px-4 py-2 text-sm font-medium text-white hover:bg-vermillion-600"
+                  className="mt-2 flex items-center justify-center gap-2 border border-gold px-4 py-2.5 text-[11px] uppercase tracking-wide text-gold hover:bg-gold hover:text-pv-black"
                 >
-                  <UserPlus className="h-4 w-4" />
+                  <UserPlus className="h-3.5 w-3.5" />
                   Register
                 </Link>
               </>

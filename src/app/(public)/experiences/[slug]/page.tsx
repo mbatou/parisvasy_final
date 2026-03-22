@@ -50,9 +50,9 @@ export default async function ExperienceDetailPage({
       : [];
 
   return (
-    <div className="bg-white">
+    <div className="bg-pv-black pt-24">
       {/* Hero Image Gallery */}
-      <div className="relative h-[40vh] overflow-hidden bg-cream-200 sm:h-[50vh] lg:h-[60vh]">
+      <div className="relative h-[40vh] overflow-hidden bg-pv-black-90 sm:h-[50vh] lg:h-[60vh]">
         {gallery.length > 0 ? (
           <div className="flex h-full">
             <div className="relative flex-1">
@@ -82,7 +82,7 @@ export default async function ExperienceDetailPage({
             )}
           </div>
         ) : (
-          <div className="flex h-full items-center justify-center text-ink-200">
+          <div className="flex h-full items-center justify-center text-white/30">
             <span className="text-lg">No images available</span>
           </div>
         )}
@@ -105,11 +105,11 @@ export default async function ExperienceDetailPage({
               )}
             </div>
 
-            <h1 className="mt-4 font-serif text-3xl leading-tight text-navy sm:text-4xl">
+            <h1 className="mt-4 font-serif text-3xl font-light leading-tight text-white sm:text-4xl">
               {experience.title}
             </h1>
 
-            <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-ink-300">
+            <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-white/40">
               <span className="flex items-center gap-1.5">
                 <MapPin className="h-4 w-4" />
                 {experience.location}
@@ -126,9 +126,9 @@ export default async function ExperienceDetailPage({
 
             {/* Hotel info */}
             {experience.hotel && (
-              <p className="mt-3 text-sm text-ink-300">
+              <p className="mt-3 text-sm text-white/40">
                 At{" "}
-                <span className="font-medium text-navy">
+                <span className="font-medium text-white">
                   {experience.hotel.name}
                 </span>
                 {" — "}
@@ -139,10 +139,10 @@ export default async function ExperienceDetailPage({
             {/* Description */}
             {experience.description && (
               <div className="mt-8">
-                <h3 className="font-serif text-xl text-navy">
+                <h3 className="font-serif text-xl font-light text-white">
                   About this experience
                 </h3>
-                <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-ink-400">
+                <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-white/50">
                   {experience.description}
                 </p>
               </div>
@@ -151,14 +151,14 @@ export default async function ExperienceDetailPage({
             {/* What's included */}
             {experience.inclusions.length > 0 && (
               <div className="mt-10">
-                <h3 className="font-serif text-xl text-navy">
+                <h3 className="font-serif text-xl font-light text-white">
                   What&apos;s included
                 </h3>
                 <ul className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {experience.inclusions.map((item) => (
                     <li
                       key={item}
-                      className="flex items-start gap-2 text-sm text-ink-400"
+                      className="flex items-start gap-2 text-sm text-white/50"
                     >
                       <Check className="mt-0.5 h-4 w-4 shrink-0 text-sage" />
                       {item}
@@ -169,7 +169,7 @@ export default async function ExperienceDetailPage({
             )}
 
             {/* Included free banner */}
-            <div className="mt-10 flex items-center gap-3 rounded-xl bg-sage-50 p-5">
+            <div className="mt-10 flex items-center gap-3 bg-pv-black-90 p-5">
               <Gift className="h-6 w-6 shrink-0 text-sage" />
               <div>
                 <p className="font-semibold text-sage-500">

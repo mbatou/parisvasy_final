@@ -52,20 +52,20 @@ function BookingsContent() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-navy-500 font-serif">
+        <h1 className="text-2xl font-light text-white font-serif">
           Bookings
         </h1>
-        <p className="mt-1 text-sm text-navy-300 font-sans">
+        <p className="mt-1 text-sm text-white/40 font-sans">
           Manage all reservations, check-ins, and check-outs.
         </p>
       </div>
 
       {loading ? (
         <div className="flex items-center justify-center py-16">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-navy-200 border-t-vermillion-500" />
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-gold" />
         </div>
       ) : (
-        <div className="rounded-xl border border-navy-50 bg-white p-6 shadow-sm">
+        <div className="border border-white/[0.06] bg-pv-black-80 p-6">
           <BookingsTable bookings={bookings} onAction={handleAction} />
         </div>
       )}
@@ -78,7 +78,7 @@ export default function BookingsPage() {
     <Suspense
       fallback={
         <div className="flex items-center justify-center py-16">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-navy-200 border-t-vermillion-500" />
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-gold" />
         </div>
       }
     >

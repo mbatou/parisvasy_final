@@ -25,17 +25,17 @@ export function StatsCards({ stats }: StatsCardsProps) {
         return (
           <div
             key={stat.label}
-            className="rounded-xl border border-navy-100 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
+            className="border border-white/[0.06] bg-pv-black-80 p-5 transition-all hover:border-gold/15"
           >
             <div className="flex items-center justify-between">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-cream-100">
-                <Icon className="h-5 w-5 text-vermillion-500" />
+              <div className="flex h-10 w-10 items-center justify-center bg-gold/10 border border-gold/20">
+                <Icon className="h-5 w-5 text-gold" />
               </div>
               {stat.trend && (
                 <div
                   className={cn(
                     "flex items-center gap-0.5 text-xs font-medium",
-                    isPositive ? "text-green-600" : "text-red-600"
+                    isPositive ? "text-green-400" : "text-red-400"
                   )}
                 >
                   {isPositive ? (
@@ -47,12 +47,14 @@ export function StatsCards({ stats }: StatsCardsProps) {
                 </div>
               )}
             </div>
-            <p className="mt-3 text-2xl font-bold text-navy-500">
+            <p className="mt-4 font-serif text-2xl text-white font-light">
               {stat.value}
             </p>
-            <p className="mt-1 text-xs text-navy-300">{stat.label}</p>
+            <p className="mt-1 text-[10px] uppercase tracking-luxury text-white/30">
+              {stat.label}
+            </p>
             {stat.trend?.label && (
-              <p className="mt-0.5 text-[10px] text-navy-200">
+              <p className="mt-0.5 text-[10px] text-white/20">
                 {stat.trend.label}
               </p>
             )}

@@ -173,21 +173,21 @@ export const CATEGORY_LABELS: Record<ExperienceCategory, string> = {
 };
 
 export const CATEGORY_COLORS: Record<ExperienceCategory, string> = {
-  cruise: "bg-blue-100 text-blue-800",
-  gastronomy: "bg-orange-100 text-orange-800",
-  culture: "bg-purple-100 text-purple-800",
-  wellness: "bg-green-100 text-green-800",
-  adventure: "bg-red-100 text-red-800",
-  nightlife: "bg-indigo-100 text-indigo-800",
+  cruise: "bg-blue-500/15 text-blue-400",
+  gastronomy: "bg-orange-500/15 text-orange-400",
+  culture: "bg-purple-500/15 text-purple-400",
+  wellness: "bg-green-500/15 text-green-400",
+  adventure: "bg-red-500/15 text-red-400",
+  nightlife: "bg-indigo-500/15 text-indigo-400",
 };
 
 export const STATUS_COLORS: Record<BookingStatus, string> = {
-  pending: "bg-yellow-100 text-yellow-800",
-  confirmed: "bg-blue-100 text-blue-800",
-  checked_in: "bg-green-100 text-green-800",
-  checked_out: "bg-gray-100 text-gray-800",
-  cancelled: "bg-red-100 text-red-800",
-  no_show: "bg-red-100 text-red-800",
+  pending: "bg-yellow-500/15 text-yellow-400",
+  confirmed: "bg-blue-500/15 text-blue-400",
+  checked_in: "bg-green-500/15 text-green-400",
+  checked_out: "bg-white/10 text-white/50",
+  cancelled: "bg-red-500/15 text-red-400",
+  no_show: "bg-red-500/15 text-red-400",
 };
 
 export const STATUS_LABELS: Record<BookingStatus, string> = {

@@ -25,10 +25,10 @@ export default async function HotelsPage() {
   if (role !== "super_admin") {
     return (
       <div className="flex flex-col items-center justify-center py-16">
-        <h1 className="text-2xl font-bold text-navy-500 font-serif">
+        <h1 className="text-2xl font-light text-white font-serif">
           Access Denied
         </h1>
-        <p className="mt-2 text-sm text-navy-300">
+        <p className="mt-2 text-sm text-white/40">
           Only super administrators can manage hotels.
         </p>
       </div>
@@ -52,16 +52,16 @@ export default async function HotelsPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-navy-500 font-serif">
+          <h1 className="text-2xl font-light text-white font-serif">
             Hotels
           </h1>
-          <p className="mt-1 text-sm text-navy-300 font-sans">
+          <p className="mt-1 text-sm text-white/40 font-sans">
             Manage all hotels in the PARISVASY network.
           </p>
         </div>
         <Link
           href="/admin/hotels/new"
-          className="inline-flex items-center gap-2 rounded-lg bg-vermillion-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-vermillion-600"
+          className="inline-flex items-center gap-2 rounded-lg bg-gold text-pv-black px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-gold/80"
         >
           <Plus className="h-4 w-4" />
           New Hotel
@@ -69,17 +69,17 @@ export default async function HotelsPage() {
       </div>
 
       {hotels.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-navy-100 bg-white py-16">
-          <Building2 className="h-12 w-12 text-navy-200" />
-          <p className="mt-4 text-lg font-medium text-navy-400">
+        <div className="flex flex-col items-center justify-center border border-white/[0.06] bg-pv-black-80 py-16">
+          <Building2 className="h-12 w-12 text-white/30" />
+          <p className="mt-4 text-lg font-medium text-white/80">
             No hotels yet
           </p>
-          <p className="mt-1 text-sm text-navy-300">
+          <p className="mt-1 text-sm text-white/40">
             Add your first hotel to get started.
           </p>
           <Link
             href="/admin/hotels/new"
-            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-vermillion-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-vermillion-600"
+            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-gold text-pv-black px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-gold/80"
           >
             <Plus className="h-4 w-4" />
             Create Hotel
@@ -91,7 +91,7 @@ export default async function HotelsPage() {
             <Link
               key={hotel.id}
               href={`/admin/hotels/${hotel.id}`}
-              className="group rounded-xl border border-navy-100 bg-white p-5 shadow-sm transition-all hover:border-vermillion-200 hover:shadow-md"
+              className="group border border-white/[0.06] bg-pv-black-80 p-5 transition-all hover:border-gold/20"
             >
               {/* Cover image */}
               {hotel.coverImage ? (
@@ -103,13 +103,13 @@ export default async function HotelsPage() {
                   />
                 </div>
               ) : (
-                <div className="mb-4 flex h-40 items-center justify-center rounded-lg bg-cream-100">
-                  <Building2 className="h-8 w-8 text-navy-200" />
+                <div className="mb-4 flex h-40 items-center justify-center rounded-lg bg-pv-black-90">
+                  <Building2 className="h-8 w-8 text-white/30" />
                 </div>
               )}
 
               <div className="flex items-start justify-between gap-2">
-                <h3 className="font-serif text-lg font-bold text-navy-500 group-hover:text-vermillion-500 transition-colors">
+                <h3 className="font-serif text-lg font-light text-white group-hover:text-gold transition-colors">
                   {hotel.name}
                 </h3>
                 <Badge variant={hotel.isActive ? "green" : "red"}>
@@ -117,7 +117,7 @@ export default async function HotelsPage() {
                 </Badge>
               </div>
 
-              <div className="mt-2 flex items-center gap-2 text-sm text-navy-300">
+              <div className="mt-2 flex items-center gap-2 text-sm text-white/40">
                 <MapPin className="h-3.5 w-3.5" />
                 {hotel.city}, {hotel.country}
               </div>
@@ -131,24 +131,24 @@ export default async function HotelsPage() {
                 ))}
               </div>
 
-              <div className="mt-4 grid grid-cols-3 gap-2 border-t border-navy-50 pt-3">
+              <div className="mt-4 grid grid-cols-3 gap-2 border-t border-white/[0.06] pt-3">
                 <div className="text-center">
-                  <p className="text-lg font-bold text-navy-500">
+                  <p className="text-lg font-bold text-white">
                     {hotel._count.rooms}
                   </p>
-                  <p className="text-[10px] text-navy-300">Rooms</p>
+                  <p className="text-[10px] text-white/40">Rooms</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-lg font-bold text-navy-500">
+                  <p className="text-lg font-bold text-white">
                     {hotel._count.experiences}
                   </p>
-                  <p className="text-[10px] text-navy-300">Experiences</p>
+                  <p className="text-[10px] text-white/40">Experiences</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-lg font-bold text-navy-500">
+                  <p className="text-lg font-bold text-white">
                     {hotel._count.bookings}
                   </p>
-                  <p className="text-[10px] text-navy-300">Bookings</p>
+                  <p className="text-[10px] text-white/40">Bookings</p>
                 </div>
               </div>
             </Link>

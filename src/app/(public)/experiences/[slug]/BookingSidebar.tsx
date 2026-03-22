@@ -110,8 +110,8 @@ export default function BookingSidebar({
   };
 
   return (
-    <div className="sticky top-6 rounded-2xl border border-cream-300 bg-white p-6 shadow-sm">
-      <h3 className="font-serif text-xl text-navy">Book this experience</h3>
+    <div className="sticky top-6 border border-white/[0.06] bg-pv-black-80 p-6">
+      <h3 className="font-serif text-xl font-light text-white">Book this experience</h3>
 
       {error && (
         <div className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
@@ -121,7 +121,7 @@ export default function BookingSidebar({
 
       {/* Room Selection */}
       <div className="mt-6">
-        <label className="mb-2 block text-sm font-medium text-navy-500">
+        <label className="mb-2 block text-sm font-medium text-white">
           Choose a room
         </label>
         <RoomSelector
@@ -134,7 +134,7 @@ export default function BookingSidebar({
       {/* Night Selector */}
       {selectedRoom && (
         <div className="mt-6">
-          <label className="mb-2 block text-sm font-medium text-navy-500">
+          <label className="mb-2 block text-sm font-medium text-white">
             Number of nights
           </label>
           <NightSelector
@@ -147,7 +147,7 @@ export default function BookingSidebar({
 
       {/* Date Input */}
       <div className="mt-6">
-        <label className="mb-2 flex items-center gap-1.5 text-sm font-medium text-navy-500">
+        <label className="mb-2 flex items-center gap-1.5 text-sm font-medium text-white">
           <CalendarDays className="h-4 w-4" />
           Check-in date
         </label>
@@ -159,7 +159,7 @@ export default function BookingSidebar({
           required
         />
         {checkOutDate && (
-          <p className="mt-1 text-xs text-ink-300">
+          <p className="mt-1 text-xs text-white/40">
             Check-out: {checkOutDate}
           </p>
         )}
@@ -167,7 +167,7 @@ export default function BookingSidebar({
 
       {/* Guest Count */}
       <div className="mt-6">
-        <label className="mb-2 flex items-center gap-1.5 text-sm font-medium text-navy-500">
+        <label className="mb-2 flex items-center gap-1.5 text-sm font-medium text-white">
           <Users className="h-4 w-4" />
           Guests
         </label>
@@ -182,13 +182,13 @@ export default function BookingSidebar({
 
       {/* Summary */}
       {selectedRoom && (
-        <div className="mt-6 space-y-2 rounded-xl bg-cream px-4 py-4">
-          <div className="flex justify-between text-sm text-ink-400">
+        <div className="mt-6 space-y-2 bg-pv-black-90 px-4 py-4">
+          <div className="flex justify-between text-sm text-white/50">
             <span>
               {formatCurrency(pricePerNight)} x {nights}{" "}
               {nights === 1 ? "night" : "nights"}
             </span>
-            <span className="font-semibold text-navy">
+            <span className="font-semibold text-white">
               {formatCurrency(roomTotal)}
             </span>
           </div>
@@ -199,10 +199,10 @@ export default function BookingSidebar({
             </span>
             <span className="font-semibold text-sage-500">Included free</span>
           </div>
-          <div className="border-t border-cream-300 pt-2">
+          <div className="border-t border-white/[0.06] pt-2">
             <div className="flex justify-between text-base font-bold">
-              <span className="text-navy">Total</span>
-              <span className="text-vermillion">{formatCurrency(roomTotal)}</span>
+              <span className="text-white">Total</span>
+              <span className="text-gold">{formatCurrency(roomTotal)}</span>
             </div>
           </div>
         </div>
@@ -219,7 +219,7 @@ export default function BookingSidebar({
         Book Now
       </Button>
 
-      <p className="mt-3 text-center text-xs text-ink-300">
+      <p className="mt-3 text-center text-xs text-white/40">
         No payment now — card warranty collected on the next step
       </p>
     </div>

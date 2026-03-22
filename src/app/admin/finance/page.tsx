@@ -183,10 +183,10 @@ export default async function FinancePage({
     <div className="space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-navy-500 font-serif">
+          <h1 className="text-2xl font-light text-white font-serif">
             Finance
           </h1>
-          <p className="mt-1 text-sm text-navy-300 font-sans">
+          <p className="mt-1 text-sm text-white/40 font-sans">
             Revenue overview and financial reporting.
           </p>
         </div>
@@ -197,17 +197,17 @@ export default async function FinancePage({
       <StatsCards stats={stats} />
 
       {/* Revenue Chart */}
-      <div className="rounded-xl border border-navy-100 bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-lg font-bold text-navy-500 font-serif">
+      <div className="border border-white/[0.06] bg-pv-black-80 p-6">
+        <h2 className="mb-4 text-lg font-light text-white font-serif">
           Revenue Overview (12 Months)
         </h2>
         <RevenueChart data={monthlyData} />
       </div>
 
       {/* Bookings table */}
-      <div className="rounded-xl border border-navy-100 bg-white shadow-sm">
-        <div className="border-b border-navy-100 px-6 py-4">
-          <h2 className="text-lg font-bold text-navy-500 font-serif">
+      <div className="border border-white/[0.06] bg-pv-black-80">
+        <div className="border-b border-white/[0.06] px-6 py-4">
+          <h2 className="text-lg font-light text-white font-serif">
             Recent Transactions
           </h2>
         </div>
@@ -232,29 +232,29 @@ export default async function FinancePage({
                   <TableCell>
                     <Link
                       href={`/admin/bookings/${booking.id}`}
-                      className="font-mono text-xs text-vermillion-500 hover:underline"
+                      className="font-mono text-xs text-gold hover:underline"
                     >
                       {booking.reference}
                     </Link>
                   </TableCell>
-                  <TableCell className="text-navy-400">
+                  <TableCell className="text-white/80">
                     {booking.guest
                       ? `${booking.guest.firstName} ${booking.guest.lastName}`
                       : "---"}
                   </TableCell>
-                  <TableCell className="text-navy-400">
+                  <TableCell className="text-white/80">
                     {booking.experience?.title ?? "---"}
                   </TableCell>
-                  <TableCell className="text-navy-400">
+                  <TableCell className="text-white/80">
                     {booking.room?.name ?? "---"}
                   </TableCell>
-                  <TableCell className="text-navy-400">
+                  <TableCell className="text-white/80">
                     {formatDate(booking.checkIn)}
                   </TableCell>
-                  <TableCell className="text-navy-400">
+                  <TableCell className="text-white/80">
                     {booking.nights}
                   </TableCell>
-                  <TableCell className="font-semibold text-navy-500">
+                  <TableCell className="font-semibold text-white">
                     {formatCurrency(Number(booking.roomTotal))}
                   </TableCell>
                   <TableCell>

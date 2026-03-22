@@ -20,9 +20,9 @@ const CARD_ELEMENT_OPTIONS = {
     base: {
       fontSize: "16px",
       fontFamily: "Manrope, system-ui, sans-serif",
-      color: "#111110",
+      color: "#ffffff",
       "::placeholder": {
-        color: "#A3A3A0",
+        color: "rgba(255,255,255,0.4)",
       },
     },
     invalid: {
@@ -91,7 +91,7 @@ export default function CardWarrantyForm({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
       {/* Info Banner */}
-      <div className="flex items-start gap-3 rounded-xl bg-sage-50 p-4">
+      <div className="flex items-start gap-3 bg-pv-black-90 p-4">
         <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-sage" />
         <div>
           <p className="text-sm font-semibold text-sage-500">
@@ -106,14 +106,14 @@ export default function CardWarrantyForm({
 
       {/* Card Element */}
       <div className="flex flex-col gap-1.5">
-        <label className="flex items-center gap-1.5 text-sm font-medium text-navy-500">
+        <label className="flex items-center gap-1.5 text-sm font-medium text-white">
           <CreditCard className="h-4 w-4" />
           Card details
         </label>
         <div
           className={cn(
-            "rounded-lg border bg-white px-4 py-3 transition-colors",
-            error ? "border-red-500" : "border-navy-100"
+            "rounded-lg border bg-pv-black-80 px-4 py-3 transition-colors",
+            error ? "border-red-500" : "border-white/[0.06]"
           )}
         >
           <CardElement
@@ -139,7 +139,7 @@ export default function CardWarrantyForm({
       )}
 
       {/* Booking ID Reference */}
-      <p className="text-xs text-ink-200">
+      <p className="text-xs text-white/30">
         Booking reference: {bookingId}
       </p>
 
@@ -148,8 +148,8 @@ export default function CardWarrantyForm({
         type="submit"
         disabled={!stripe || !cardComplete || loading}
         className={cn(
-          "flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white transition-colors",
-          "bg-vermillion hover:bg-vermillion-600",
+          "flex items-center justify-center gap-2 px-6 py-3 text-sm font-semibold text-pv-black transition-colors",
+          "bg-gold hover:bg-gold/90",
           "disabled:pointer-events-none disabled:opacity-50"
         )}
       >

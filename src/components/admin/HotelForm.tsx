@@ -115,12 +115,12 @@ export function HotelForm({ hotel, onSubmit }: HotelFormProps) {
       </div>
 
       <div>
-        <label className="text-sm font-medium text-navy-500">Description</label>
+        <label className="text-sm font-light text-white/80">Description</label>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={4}
-          className="mt-1.5 w-full rounded-lg border border-navy-100 bg-white px-3 py-2 text-sm text-navy-500 placeholder:text-navy-200 focus:border-vermillion-500 focus:outline-none focus:ring-2 focus:ring-vermillion-300"
+          className="mt-1.5 w-full rounded border border-white/[0.06] bg-pv-black-80 px-3 py-2 text-sm font-light text-white/80 placeholder:text-white/30 focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/30"
           placeholder="Describe the hotel..."
         />
       </div>
@@ -144,16 +144,16 @@ export function HotelForm({ hotel, onSubmit }: HotelFormProps) {
 
       {/* Cover image placeholder */}
       <div>
-        <label className="text-sm font-medium text-navy-500">Cover Image</label>
-        <div className="mt-1.5 flex h-40 items-center justify-center rounded-lg border-2 border-dashed border-navy-100 bg-cream-50 text-sm text-navy-300">
+        <label className="text-sm font-light text-white/80">Cover Image</label>
+        <div className="mt-1.5 flex h-40 items-center justify-center rounded border-2 border-dashed border-white/[0.06] bg-pv-black-90 text-sm font-light text-white/40">
           Cover image upload placeholder
         </div>
       </div>
 
       {/* Gallery placeholder */}
       <div>
-        <label className="text-sm font-medium text-navy-500">Gallery</label>
-        <div className="mt-1.5 flex h-32 items-center justify-center rounded-lg border-2 border-dashed border-navy-100 bg-cream-50 text-sm text-navy-300">
+        <label className="text-sm font-light text-white/80">Gallery</label>
+        <div className="mt-1.5 flex h-32 items-center justify-center rounded border-2 border-dashed border-white/[0.06] bg-pv-black-90 text-sm font-light text-white/40">
           Gallery upload placeholder
         </div>
       </div>

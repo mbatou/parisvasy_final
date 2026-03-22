@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/prisma";
 import HeroSearch from "@/components/public/HeroSearch";
 import ExperienceGrid from "@/components/public/ExperienceGrid";
+import { SectionReveal } from "@/components/public/SectionReveal";
 import { Star, Compass, Gift, ShieldCheck } from "lucide-react";
 import type { Experience, Room } from "@/types";
 
@@ -30,7 +31,6 @@ export default async function HomePage() {
       where: { isActive: true },
     });
 
-    // Serialize Decimal fields for client components
     serialized = experiences.map((exp) => ({
       ...exp,
       hotel: {
@@ -50,97 +50,106 @@ export default async function HomePage() {
       {/* Hero Section */}
       <HeroSearch />
 
-      {/* Trust Bar */}
-      <section className="border-y border-cream-200 bg-white py-8">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-8 px-4 sm:gap-12 md:gap-16">
-          <div className="flex items-center gap-2 text-sm font-medium text-ink-400">
-            <Star className="h-5 w-5 text-champagne" />
-            <span>4.9/5 average rating</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm font-medium text-ink-400">
-            <Compass className="h-5 w-5 text-vermillion" />
-            <span>{experienceCount} experiences</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm font-medium text-ink-400">
-            <Gift className="h-5 w-5 text-sage" />
-            <span>0&euro; experience cost</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm font-medium text-ink-400">
-            <ShieldCheck className="h-5 w-5 text-navy-300" />
-            <span>Free cancellation</span>
-          </div>
+      {/* Marquee Ticker */}
+      <div className="border-y border-white/[0.06] bg-pv-black-90 py-3 overflow-hidden">
+        <div className="animate-marquee whitespace-nowrap flex">
+          {[0, 1].map((i) => (
+            <div key={i} className="flex items-center gap-12 px-6 shrink-0">
+              <span className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-white/40">
+                <Star className="h-3.5 w-3.5 text-gold" />
+                4.9/5 average rating
+              </span>
+              <span className="text-white/10">&bull;</span>
+              <span className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-white/40">
+                <Compass className="h-3.5 w-3.5 text-gold" />
+                {experienceCount || "12"}+ curated experiences
+              </span>
+              <span className="text-white/10">&bull;</span>
+              <span className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-white/40">
+                <Gift className="h-3.5 w-3.5 text-gold" />
+                0&euro; experience cost
+              </span>
+              <span className="text-white/10">&bull;</span>
+              <span className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-white/40">
+                <ShieldCheck className="h-3.5 w-3.5 text-gold" />
+                Free cancellation 48h
+              </span>
+            </div>
+          ))}
         </div>
-      </section>
+      </div>
 
       {/* How It Works */}
-      <section id="how-it-works" className="bg-cream py-20 sm:py-24">
+      <section id="how-it-works" className="bg-pv-black py-24 sm:py-28">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h2 className="font-serif text-3xl text-navy sm:text-4xl">
-              How it works
-            </h2>
-            <p className="mx-auto mt-3 max-w-xl text-ink-300">
-              Three simple steps to an unforgettable stay in Paris
-            </p>
-          </div>
-
-          <div className="mt-14 grid grid-cols-1 gap-10 sm:grid-cols-3">
-            {/* Step 1 */}
-            <div className="flex flex-col items-center text-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-vermillion text-xl font-bold text-white">
-                1
-              </div>
-              <h3 className="mt-5 font-serif text-xl text-navy">
-                Pick an experience
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-ink-300">
-                Browse our curated collection of Parisian experiences — from
-                Seine cruises to hidden wine tastings.
+          <SectionReveal>
+            <div className="text-center">
+              <span className="micro-label text-gold tracking-[3px]">
+                How it works
+              </span>
+              <h2 className="mt-4 font-serif text-3xl text-white font-light sm:text-4xl">
+                Three simple steps
+              </h2>
+              <p className="mx-auto mt-3 max-w-xl text-white/40 font-light">
+                To an unforgettable stay in Paris
               </p>
             </div>
+          </SectionReveal>
 
-            {/* Step 2 */}
-            <div className="flex flex-col items-center text-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-vermillion text-xl font-bold text-white">
-                2
-              </div>
-              <h3 className="mt-5 font-serif text-xl text-navy">
-                Choose your room
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-ink-300">
-                Select a room at the partner hotel. The experience is always
-                included free with your stay.
-              </p>
-            </div>
-
-            {/* Step 3 */}
-            <div className="flex flex-col items-center text-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-vermillion text-xl font-bold text-white">
-                3
-              </div>
-              <h3 className="mt-5 font-serif text-xl text-navy">
-                Book &amp; enjoy
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-ink-300">
-                Confirm your booking with a card warranty — no upfront payment.
-                Then just show up and enjoy.
-              </p>
-            </div>
+          <div className="mt-16 grid grid-cols-1 gap-12 sm:grid-cols-3">
+            {[
+              {
+                num: "01",
+                title: "Pick an experience",
+                desc: "Browse our curated collection of Parisian experiences — from Seine cruises to hidden wine tastings.",
+              },
+              {
+                num: "02",
+                title: "Choose your room",
+                desc: "Select a room at the partner hotel. The experience is always included free with your stay.",
+              },
+              {
+                num: "03",
+                title: "Book & enjoy",
+                desc: "Confirm your booking with a card warranty — no upfront payment. Then just show up and enjoy.",
+              },
+            ].map((step, i) => (
+              <SectionReveal key={step.num} delay={i * 150}>
+                <div className="flex flex-col items-center text-center">
+                  <div className="flex h-16 w-16 items-center justify-center border border-gold/25 bg-gold/[0.06]">
+                    <span className="font-serif text-2xl text-gold font-light">
+                      {step.num}
+                    </span>
+                  </div>
+                  <h3 className="mt-6 font-serif text-xl text-white font-light">
+                    {step.title}
+                  </h3>
+                  <p className="mt-3 text-sm leading-relaxed text-white/40 font-light">
+                    {step.desc}
+                  </p>
+                </div>
+              </SectionReveal>
+            ))}
           </div>
         </div>
       </section>
 
       {/* Experiences Grid */}
-      <section className="bg-white py-20 sm:py-24">
+      <section className="bg-pv-black-90 py-24 sm:py-28">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-10 text-center">
-            <h2 className="font-serif text-3xl text-navy sm:text-4xl">
-              Featured experiences
-            </h2>
-            <p className="mx-auto mt-3 max-w-xl text-ink-300">
-              Discover our most popular Parisian adventures
-            </p>
-          </div>
+          <SectionReveal>
+            <div className="mb-16 text-center">
+              <span className="micro-label text-gold tracking-[3px]">
+                Curated for you
+              </span>
+              <h2 className="mt-4 font-serif text-3xl text-white font-light sm:text-4xl">
+                Featured experiences
+              </h2>
+              <p className="mx-auto mt-3 max-w-xl text-white/40 font-light">
+                Discover our most popular Parisian adventures
+              </p>
+            </div>
+          </SectionReveal>
           <ExperienceGrid experiences={serialized} />
         </div>
       </section>

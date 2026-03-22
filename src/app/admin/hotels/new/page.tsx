@@ -21,15 +21,15 @@ export default function NewHotelPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-navy-500 font-serif">
+        <h1 className="text-2xl font-light text-white font-serif">
           New Hotel
         </h1>
-        <p className="mt-1 text-sm text-navy-300 font-sans">
+        <p className="mt-1 text-sm text-white/40 font-sans">
           Add a new hotel to the PARISVASY network.
         </p>
       </div>
 
-      <div className="rounded-xl border border-navy-100 bg-white p-6 shadow-sm">
+      <div className="border border-white/[0.06] bg-pv-black-80 p-6">
         <HotelForm onSubmit={handleSubmit} />
       </div>
     </div>
