@@ -219,7 +219,7 @@ async function main() {
     {
       username: "gdieme",
       password: "probiteE@08020",
-      firstName: "Gora",
+      firstName: "Georges",
       lastName: "DIEME",
       role: "super_admin" as const,
       phone: "+33 6 00 00 00 00",
