@@ -36,36 +36,36 @@ export default function BookingConfirmation({
     <div className="mx-auto flex max-w-lg flex-col items-center gap-8">
       {/* Success Icon */}
       <div className="flex flex-col items-center gap-3 text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-sage-50">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-pv-black-90">
           <CheckCircle2 className="h-10 w-10 text-sage" />
         </div>
-        <h2 className="font-serif text-3xl text-navy">Booking confirmed</h2>
-        <p className="text-sm text-ink-300">
+        <h2 className="font-serif text-3xl font-light text-white">Booking confirmed</h2>
+        <p className="text-sm text-white/40">
           Your reservation has been successfully created.
         </p>
       </div>
 
       {/* Booking Reference */}
-      <div className="w-full rounded-2xl bg-cream px-6 py-5 text-center">
-        <p className="text-xs font-medium uppercase tracking-wider text-ink-300">
+      <div className="w-full bg-pv-black-90 px-6 py-5 text-center">
+        <p className="text-xs font-medium uppercase tracking-wider text-white/40">
           Booking reference
         </p>
-        <p className="mt-1 font-serif text-2xl font-bold tracking-wide text-navy">
+        <p className="mt-1 font-serif text-2xl font-light tracking-wide text-white">
           {booking.reference}
         </p>
       </div>
 
       {/* Details Card */}
-      <div className="w-full divide-y divide-cream-200 rounded-2xl border border-cream-300 bg-white">
+      <div className="w-full divide-y divide-white/[0.06] border border-white/[0.06] bg-pv-black-80">
         {/* Hotel */}
         {booking.hotel && (
           <div className="flex items-center gap-3 px-5 py-4">
-            <Hotel className="h-5 w-5 shrink-0 text-ink-200" />
+            <Hotel className="h-5 w-5 shrink-0 text-white/30" />
             <div>
-              <p className="text-sm font-semibold text-navy">
+              <p className="text-sm font-semibold text-white">
                 {booking.hotel.name}
               </p>
-              <p className="text-xs text-ink-300">
+              <p className="text-xs text-white/40">
                 {booking.hotel.city}, {booking.hotel.country}
               </p>
             </div>
@@ -75,12 +75,12 @@ export default function BookingConfirmation({
         {/* Room */}
         {booking.room && (
           <div className="flex items-center gap-3 px-5 py-4">
-            <BedDouble className="h-5 w-5 shrink-0 text-ink-200" />
+            <BedDouble className="h-5 w-5 shrink-0 text-white/30" />
             <div>
-              <p className="text-sm font-semibold text-navy">
+              <p className="text-sm font-semibold text-white">
                 {booking.room.name}
               </p>
-              <p className="text-xs capitalize text-ink-300">
+              <p className="text-xs capitalize text-white/40">
                 {booking.room.type}
               </p>
             </div>
@@ -90,12 +90,12 @@ export default function BookingConfirmation({
         {/* Experience */}
         {booking.experience && (
           <div className="flex items-center gap-3 px-5 py-4">
-            <Compass className="h-5 w-5 shrink-0 text-ink-200" />
+            <Compass className="h-5 w-5 shrink-0 text-white/30" />
             <div>
-              <p className="text-sm font-semibold text-navy">
+              <p className="text-sm font-semibold text-white">
                 {booking.experience.title}
               </p>
-              <p className="text-xs capitalize text-ink-300">
+              <p className="text-xs capitalize text-white/40">
                 {booking.experience.category} &middot; Included free
               </p>
             </div>
@@ -104,13 +104,13 @@ export default function BookingConfirmation({
 
         {/* Dates */}
         <div className="flex items-center gap-3 px-5 py-4">
-          <CalendarDays className="h-5 w-5 shrink-0 text-ink-200" />
+          <CalendarDays className="h-5 w-5 shrink-0 text-white/30" />
           <div>
-            <p className="text-sm font-semibold text-navy">
+            <p className="text-sm font-semibold text-white">
               {formatDate(booking.checkIn)} &mdash;{" "}
               {formatDate(booking.checkOut)}
             </p>
-            <p className="text-xs text-ink-300">
+            <p className="text-xs text-white/40">
               {booking.nights} {booking.nights === 1 ? "night" : "nights"}
             </p>
           </div>
@@ -118,8 +118,8 @@ export default function BookingConfirmation({
 
         {/* Guests */}
         <div className="flex items-center gap-3 px-5 py-4">
-          <Users className="h-5 w-5 shrink-0 text-ink-200" />
-          <p className="text-sm text-navy">
+          <Users className="h-5 w-5 shrink-0 text-white/30" />
+          <p className="text-sm text-white">
             {booking.guestCount}{" "}
             {booking.guestCount === 1 ? "guest" : "guests"}
           </p>
@@ -127,23 +127,23 @@ export default function BookingConfirmation({
 
         {/* Total */}
         <div className="flex items-center justify-between px-5 py-4">
-          <span className="text-sm font-medium text-ink-300">Room total</span>
-          <span className="text-lg font-bold text-vermillion">
+          <span className="text-sm font-medium text-white/50">Room total</span>
+          <span className="text-lg font-bold text-gold">
             {formatCurrency(roomTotal)}
           </span>
         </div>
 
         {/* Card Status */}
         <div className="flex items-center gap-3 px-5 py-4">
-          <CreditCard className="h-5 w-5 shrink-0 text-ink-200" />
+          <CreditCard className="h-5 w-5 shrink-0 text-white/30" />
           <div className="flex flex-1 items-center justify-between">
             <div>
-              <p className="text-sm text-navy">
+              <p className="text-sm text-white">
                 {booking.cardBrand && booking.cardLast4
                   ? `${booking.cardBrand} ending ${booking.cardLast4}`
                   : "Card on file"}
               </p>
-              <p className="text-xs text-ink-300">Warranty only</p>
+              <p className="text-xs text-white/40">Warranty only</p>
             </div>
             <span
               className={cn(
@@ -160,7 +160,7 @@ export default function BookingConfirmation({
 
         {/* Booking Status */}
         <div className="flex items-center justify-between px-5 py-4">
-          <span className="text-sm font-medium text-ink-300">Status</span>
+          <span className="text-sm font-medium text-white/50">Status</span>
           <span
             className={cn(
               "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold",
@@ -173,9 +173,9 @@ export default function BookingConfirmation({
       </div>
 
       {/* Email Notification */}
-      <div className="flex w-full items-center gap-3 rounded-xl bg-cream px-5 py-4">
-        <Mail className="h-5 w-5 shrink-0 text-ink-200" />
-        <p className="text-sm text-ink-300">
+      <div className="flex w-full items-center gap-3 bg-pv-black-90 px-5 py-4">
+        <Mail className="h-5 w-5 shrink-0 text-white/30" />
+        <p className="text-sm text-white/40">
           A confirmation email has been sent to{" "}
           <span className="font-medium text-navy">
             {booking.guest?.email ?? "your email address"}

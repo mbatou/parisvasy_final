@@ -4,13 +4,14 @@ import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/utils";
 import { MapPin, Clock, Users, Sparkles, Gift } from "lucide-react";
 import type { Experience, Room } from "@/types";
-import { CATEGORY_COLORS, CATEGORY_LABELS } from "@/types";
+import { CATEGORY_LABELS } from "@/types";
 
 interface ExperienceCardProps {
   experience: Experience & { hotel?: { rooms?: Room[] }; rooms?: Room[] };
+  index?: number;
 }
 
-export default function ExperienceCard({ experience }: ExperienceCardProps) {
+export default function ExperienceCard({ experience, index = 0 }: ExperienceCardProps) {
   const rooms = experience.rooms ?? experience.hotel?.rooms ?? [];
   const minPrice = rooms.length
     ? Math.min(
@@ -27,20 +28,21 @@ export default function ExperienceCard({ experience }: ExperienceCardProps) {
   return (
     <Link
       href={`/experiences/${experience.slug}`}
-      className="group block overflow-hidden rounded-2xl bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+      className="group block overflow-hidden bg-pv-black-80 border border-white/[0.06] transition-all duration-300 hover:border-gold/20 hover:-translate-y-[3px]"
+      style={{ animationDelay: `${index * 80}ms` }}
     >
       {/* Cover Image */}
-      <div className="relative aspect-[4/3] overflow-hidden bg-cream-200">
+      <div className="relative aspect-[4/3] overflow-hidden bg-pv-black-70">
         {experience.coverImage ? (
           <Image
             src={experience.coverImage}
             alt={experience.title}
             fill
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            className="object-cover transition-transform duration-[800ms] group-hover:scale-[1.06]"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           />
         ) : (
-          <div className="flex h-full items-center justify-center text-ink-200">
+          <div className="flex h-full items-center justify-center text-white/20">
             No image
           </div>
         )}
@@ -48,64 +50,66 @@ export default function ExperienceCard({ experience }: ExperienceCardProps) {
         {/* Badges */}
         <div className="absolute left-3 top-3 flex flex-col gap-1.5">
           {/* Category */}
-          <span
-            className={cn(
-              "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold",
-              CATEGORY_COLORS[experience.category]
-            )}
-          >
+          <span className="inline-flex items-center bg-black/60 backdrop-blur-sm px-2.5 py-1 text-[9px] uppercase tracking-wide font-medium text-white">
             {CATEGORY_LABELS[experience.category]}
           </span>
 
           {/* Flash deal */}
           {experience.isFlash && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-vermillion px-2.5 py-0.5 text-xs font-semibold text-white">
-              <Sparkles className="h-3 w-3" />
-              Flash deal
+            <span className="inline-flex items-center gap-1 bg-gold px-2.5 py-1 text-[9px] uppercase tracking-wide font-medium text-pv-black">
+              <Sparkles className="h-2.5 w-2.5" />
+              Flash
             </span>
           )}
         </div>
 
         {/* Included free pill */}
         <div className="absolute right-3 top-3">
-          <span className="inline-flex items-center gap-1 rounded-full bg-sage px-2.5 py-0.5 text-xs font-semibold text-white">
-            <Gift className="h-3 w-3" />
-            Included free
+          <span className="inline-flex items-center gap-1 bg-gold px-2.5 py-1 text-[9px] uppercase tracking-wide font-medium text-pv-black">
+            <Gift className="h-2.5 w-2.5" />
+            Included
           </span>
         </div>
       </div>
 
       {/* Content */}
-      <div className="p-4">
-        <h3 className="font-serif text-lg leading-snug text-navy transition-colors group-hover:text-vermillion">
+      <div className="p-6">
+        <h3 className="font-serif text-lg leading-snug text-white font-light transition-colors group-hover:text-gold">
           {experience.title}
         </h3>
 
-        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-300">
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-white/40">
           <span className="flex items-center gap-1">
-            <MapPin className="h-3.5 w-3.5" />
+            <MapPin className="h-3 w-3" />
             {experience.location}
           </span>
           <span className="flex items-center gap-1">
-            <Clock className="h-3.5 w-3.5" />
+            <Clock className="h-3 w-3" />
             {experience.duration}
           </span>
           <span className="flex items-center gap-1">
-            <Users className="h-3.5 w-3.5" />
+            <Users className="h-3 w-3" />
             Up to {experience.maxGroup}
           </span>
         </div>
 
-        {/* Price */}
-        {minPrice !== null && (
-          <p className="mt-3 text-sm font-semibold text-navy">
-            From{" "}
-            <span className="text-base text-vermillion">
-              {formatCurrency(minPrice)}
-            </span>
-            <span className="font-normal text-ink-300">/night</span>
-          </p>
-        )}
+        {/* Price + Reserve */}
+        <div className="mt-5 flex items-end justify-between">
+          {minPrice !== null ? (
+            <p className="text-sm text-white/50 font-light">
+              From{" "}
+              <span className="font-serif text-[28px] text-gold font-light leading-none">
+                {formatCurrency(minPrice)}
+              </span>
+              <span className="text-white/30">/night</span>
+            </p>
+          ) : (
+            <span />
+          )}
+          <span className="border border-gold px-4 py-2 text-[10px] uppercase tracking-wide text-gold font-medium transition-all group-hover:bg-gold group-hover:text-pv-black">
+            Reserve
+          </span>
+        </div>
       </div>
     </Link>
   );

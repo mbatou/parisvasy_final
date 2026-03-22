@@ -22,15 +22,15 @@ export default async function EditRoomPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-navy-500 font-serif">
+        <h1 className="text-2xl font-light text-white font-serif">
           Edit Room
         </h1>
-        <p className="mt-1 text-sm text-navy-300 font-sans">
+        <p className="mt-1 text-sm text-white/40 font-sans">
           Update &ldquo;{room.name}&rdquo;
         </p>
       </div>
 
-      <div className="rounded-xl border border-navy-100 bg-white p-6 shadow-sm">
+      <div className="border border-white/[0.06] bg-pv-black-80 p-6">
         <RoomEditClient room={JSON.parse(JSON.stringify(room))} />
       </div>
     </div>

@@ -70,7 +70,7 @@ export default function BookingPaymentClient({
 
   if (error) {
     return (
-      <div className="rounded-2xl border border-red-200 bg-red-50 p-6">
+      <div className="border border-red-900 bg-red-950 p-6">
         <p className="text-sm text-red-600">{error}</p>
       </div>
     );
@@ -78,25 +78,27 @@ export default function BookingPaymentClient({
 
   if (!clientSecret) {
     return (
-      <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-cream-300 bg-white p-12">
-        <Loader2 className="h-8 w-8 animate-spin text-vermillion" />
-        <p className="text-sm text-ink-300">Setting up secure payment...</p>
+      <div className="flex flex-col items-center justify-center gap-3 border border-white/[0.06] bg-pv-black-80 p-12">
+        <Loader2 className="h-8 w-8 animate-spin text-gold" />
+        <p className="text-sm text-white/40">Setting up secure payment...</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-2xl border border-cream-300 bg-white p-6">
-      <h3 className="mb-6 font-serif text-xl text-navy">Card warranty</h3>
+    <div className="border border-white/[0.06] bg-pv-black-80 p-6">
+      <h3 className="mb-6 font-serif text-xl font-light text-white">Card warranty</h3>
       <Elements
         stripe={stripePromise}
         options={{
           clientSecret,
           appearance: {
-            theme: "stripe",
+            theme: "night",
             variables: {
               fontFamily: "Manrope, system-ui, sans-serif",
-              colorPrimary: "#E63946",
+              colorPrimary: "#C9A84C",
+              colorBackground: "#1a1a1a",
+              colorText: "#ffffff",
             },
           },
         }}

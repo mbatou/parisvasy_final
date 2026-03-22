@@ -79,20 +79,20 @@ export function ImageUploader({
         className={cn(
           "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-8 transition-colors",
           dragging
-            ? "border-vermillion-500 bg-vermillion-50"
-            : "border-navy-100 bg-cream-50 hover:border-navy-200"
+            ? "border-gold bg-gold/10"
+            : "border-white/[0.06] bg-pv-black-90 hover:border-white/[0.12]"
         )}
       >
         <Upload
           className={cn(
             "h-8 w-8",
-            dragging ? "text-vermillion-500" : "text-navy-200"
+            dragging ? "text-gold" : "text-white/30"
           )}
         />
-        <p className="text-sm text-navy-400">
+        <p className="text-sm font-light text-white/40">
           Drag and drop images here, or click to browse
         </p>
-        <p className="text-xs text-navy-300">
+        <p className="text-xs font-light text-white/30">
           {images.length}/{maxFiles} images
         </p>
       </div>
@@ -112,7 +112,7 @@ export function ImageUploader({
           {images.map((src, i) => (
             <div
               key={i}
-              className="group relative aspect-square overflow-hidden rounded-lg border border-navy-100"
+              className="group relative aspect-square overflow-hidden rounded border border-white/[0.06]"
             >
               {src.startsWith("data:") ? (
                 <img
@@ -121,8 +121,8 @@ export function ImageUploader({
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center bg-cream-50">
-                  <ImageIcon className="h-6 w-6 text-navy-200" />
+                <div className="flex h-full w-full items-center justify-center bg-pv-black-90">
+                  <ImageIcon className="h-6 w-6 text-white/30" />
                 </div>
               )}
               <button

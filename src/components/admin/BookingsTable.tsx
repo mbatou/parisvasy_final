@@ -12,7 +12,6 @@ import {
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
-import { cn } from "@/lib/utils";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import {
   Eye,
@@ -24,7 +23,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import type { Booking, BookingStatus } from "@/types";
-import { STATUS_COLORS, STATUS_LABELS } from "@/types";
+import { STATUS_LABELS } from "@/types";
 
 type SortField =
   | "reference"
@@ -62,11 +61,11 @@ export function BookingsTable({ bookings, onAction }: BookingsTableProps) {
   };
 
   const SortIcon = ({ field }: { field: SortField }) => {
-    if (sortField !== field) return <ArrowUpDown className="h-3.5 w-3.5 text-navy-200" />;
+    if (sortField !== field) return <ArrowUpDown className="h-3 w-3 text-white/20" />;
     return sortDir === "asc" ? (
-      <ChevronUp className="h-3.5 w-3.5 text-vermillion-500" />
+      <ChevronUp className="h-3 w-3 text-gold" />
     ) : (
-      <ChevronDown className="h-3.5 w-3.5 text-vermillion-500" />
+      <ChevronDown className="h-3 w-3 text-gold" />
     );
   };
 
@@ -108,31 +107,31 @@ export function BookingsTable({ bookings, onAction }: BookingsTableProps) {
             setStatusFilter(e.target.value as BookingStatus | "all")
           }
         >
-          <option value="all">All statuses</option>
+          <option value="all" className="bg-pv-black-80">All statuses</option>
           {Object.entries(STATUS_LABELS).map(([key, label]) => (
-            <option key={key} value={key}>
+            <option key={key} value={key} className="bg-pv-black-80">
               {label}
             </option>
           ))}
         </Select>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-navy-500">From</label>
+          <label className="micro-label text-gold/70">From</label>
           <input
             type="date"
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
-            className="h-10 rounded-lg border border-navy-100 bg-white px-3 text-sm text-navy-500 focus:border-vermillion-500 focus:outline-none focus:ring-2 focus:ring-vermillion-300"
+            className="h-10 border border-white/[0.08] bg-pv-black-80 px-3 text-sm text-white font-light focus:border-gold/30 focus:outline-none focus:ring-1 focus:ring-gold/30 [color-scheme:dark]"
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-navy-500">To</label>
+          <label className="micro-label text-gold/70">To</label>
           <input
             type="date"
             value={dateTo}
             onChange={(e) => setDateTo(e.target.value)}
-            className="h-10 rounded-lg border border-navy-100 bg-white px-3 text-sm text-navy-500 focus:border-vermillion-500 focus:outline-none focus:ring-2 focus:ring-vermillion-300"
+            className="h-10 border border-white/[0.08] bg-pv-black-80 px-3 text-sm text-white font-light focus:border-gold/30 focus:outline-none focus:ring-1 focus:ring-gold/30 [color-scheme:dark]"
           />
         </div>
 
@@ -152,16 +151,12 @@ export function BookingsTable({ bookings, onAction }: BookingsTableProps) {
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-navy-100 bg-white">
+      <div className="border border-white/[0.06] bg-pv-black-80">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>
-                <button
-                  type="button"
-                  className="flex items-center gap-1"
-                  onClick={() => handleSort("reference")}
-                >
+                <button type="button" className="flex items-center gap-1" onClick={() => handleSort("reference")}>
                   Reference <SortIcon field="reference" />
                 </button>
               </TableHead>
@@ -169,48 +164,28 @@ export function BookingsTable({ bookings, onAction }: BookingsTableProps) {
               <TableHead>Experience</TableHead>
               <TableHead>Room</TableHead>
               <TableHead>
-                <button
-                  type="button"
-                  className="flex items-center gap-1"
-                  onClick={() => handleSort("checkIn")}
-                >
+                <button type="button" className="flex items-center gap-1" onClick={() => handleSort("checkIn")}>
                   Check-in <SortIcon field="checkIn" />
                 </button>
               </TableHead>
               <TableHead>
-                <button
-                  type="button"
-                  className="flex items-center gap-1"
-                  onClick={() => handleSort("checkOut")}
-                >
+                <button type="button" className="flex items-center gap-1" onClick={() => handleSort("checkOut")}>
                   Check-out <SortIcon field="checkOut" />
                 </button>
               </TableHead>
               <TableHead>
-                <button
-                  type="button"
-                  className="flex items-center gap-1"
-                  onClick={() => handleSort("nights")}
-                >
+                <button type="button" className="flex items-center gap-1" onClick={() => handleSort("nights")}>
                   Nights <SortIcon field="nights" />
                 </button>
               </TableHead>
               <TableHead>
-                <button
-                  type="button"
-                  className="flex items-center gap-1"
-                  onClick={() => handleSort("roomTotal")}
-                >
+                <button type="button" className="flex items-center gap-1" onClick={() => handleSort("roomTotal")}>
                   Total <SortIcon field="roomTotal" />
                 </button>
               </TableHead>
               <TableHead>Warranty</TableHead>
               <TableHead>
-                <button
-                  type="button"
-                  className="flex items-center gap-1"
-                  onClick={() => handleSort("status")}
-                >
+                <button type="button" className="flex items-center gap-1" onClick={() => handleSort("status")}>
                   Status <SortIcon field="status" />
                 </button>
               </TableHead>
@@ -220,16 +195,14 @@ export function BookingsTable({ bookings, onAction }: BookingsTableProps) {
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={11} className="py-8 text-center text-navy-300">
+                <TableCell colSpan={11} className="py-12 text-center text-white/30">
                   No bookings found.
                 </TableCell>
               </TableRow>
             ) : (
               filtered.map((booking) => (
                 <TableRow key={booking.id}>
-                  <TableCell className="font-mono text-xs font-semibold">
-                    {booking.reference}
-                  </TableCell>
+                  <TableCell className="font-mono text-xs text-gold">{booking.reference}</TableCell>
                   <TableCell>
                     {booking.guest
                       ? `${booking.guest.firstName} ${booking.guest.lastName}`
@@ -240,23 +213,21 @@ export function BookingsTable({ bookings, onAction }: BookingsTableProps) {
                   <TableCell>{formatDate(booking.checkIn)}</TableCell>
                   <TableCell>{formatDate(booking.checkOut)}</TableCell>
                   <TableCell>{booking.nights}</TableCell>
-                  <TableCell className="font-semibold">
-                    {formatCurrency(Number(booking.roomTotal))}
-                  </TableCell>
+                  <TableCell className="text-gold">{formatCurrency(Number(booking.roomTotal))}</TableCell>
                   <TableCell>
                     <Badge variant={booking.warrantyCollected ? "green" : "yellow"}>
                       {booking.warrantyCollected ? "Collected" : "Pending"}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <span
-                      className={cn(
-                        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold",
-                        STATUS_COLORS[booking.status]
-                      )}
-                    >
+                    <Badge variant={
+                      booking.status === "confirmed" ? "blue" :
+                      booking.status === "checked_in" ? "green" :
+                      booking.status === "cancelled" || booking.status === "no_show" ? "red" :
+                      booking.status === "pending" ? "yellow" : "default"
+                    }>
                       {STATUS_LABELS[booking.status]}
-                    </span>
+                    </Badge>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
@@ -264,7 +235,7 @@ export function BookingsTable({ bookings, onAction }: BookingsTableProps) {
                         type="button"
                         title="View"
                         onClick={() => onAction("view", booking.id)}
-                        className="rounded p-1.5 text-navy-300 transition-colors hover:bg-cream-100 hover:text-navy-500"
+                        className="p-1.5 text-white/30 transition-colors hover:text-gold"
                       >
                         <Eye className="h-4 w-4" />
                       </button>
@@ -273,7 +244,7 @@ export function BookingsTable({ bookings, onAction }: BookingsTableProps) {
                           type="button"
                           title="Check in"
                           onClick={() => onAction("check_in", booking.id)}
-                          className="rounded p-1.5 text-green-600 transition-colors hover:bg-green-50"
+                          className="p-1.5 text-green-400/60 transition-colors hover:text-green-400"
                         >
                           <LogIn className="h-4 w-4" />
                         </button>
@@ -283,7 +254,7 @@ export function BookingsTable({ bookings, onAction }: BookingsTableProps) {
                           type="button"
                           title="Check out"
                           onClick={() => onAction("check_out", booking.id)}
-                          className="rounded p-1.5 text-blue-600 transition-colors hover:bg-blue-50"
+                          className="p-1.5 text-blue-400/60 transition-colors hover:text-blue-400"
                         >
                           <LogOut className="h-4 w-4" />
                         </button>
@@ -294,7 +265,7 @@ export function BookingsTable({ bookings, onAction }: BookingsTableProps) {
                           type="button"
                           title="Cancel"
                           onClick={() => onAction("cancel", booking.id)}
-                          className="rounded p-1.5 text-red-600 transition-colors hover:bg-red-50"
+                          className="p-1.5 text-red-400/60 transition-colors hover:text-red-400"
                         >
                           <XCircle className="h-4 w-4" />
                         </button>

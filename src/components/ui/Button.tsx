@@ -6,21 +6,21 @@ import { cn } from "@/lib/utils";
 
 const variants = {
   primary:
-    "bg-vermillion-500 text-white hover:bg-vermillion-600 active:bg-vermillion-700 focus-visible:ring-vermillion-300",
+    "bg-gold text-pv-black hover:bg-gold-light active:bg-gold-pale focus-visible:ring-gold/50",
   secondary:
-    "bg-navy-500 text-white hover:bg-navy-400 active:bg-navy-600 focus-visible:ring-navy-300",
+    "bg-pv-black-70 text-white hover:bg-pv-black-60 active:bg-pv-black-80 focus-visible:ring-white/20",
   outline:
-    "border border-navy-200 bg-transparent text-navy-500 hover:bg-navy-50 active:bg-navy-100 focus-visible:ring-navy-200",
+    "border border-gold/25 bg-transparent text-gold hover:bg-gold hover:text-pv-black active:bg-gold-light focus-visible:ring-gold/30",
   ghost:
-    "bg-transparent text-navy-500 hover:bg-navy-50 active:bg-navy-100 focus-visible:ring-navy-200",
+    "bg-transparent text-white/60 hover:bg-white/[0.06] hover:text-white active:bg-white/10 focus-visible:ring-white/20",
   destructive:
-    "bg-red-600 text-white hover:bg-red-700 active:bg-red-800 focus-visible:ring-red-300",
+    "bg-red-600 text-white hover:bg-red-700 active:bg-red-800 focus-visible:ring-red-400/50",
 } as const;
 
 const sizes = {
-  sm: "h-8 px-3 text-sm gap-1.5 rounded-lg",
-  md: "h-10 px-4 text-sm gap-2 rounded-lg",
-  lg: "h-12 px-6 text-base gap-2.5 rounded-xl",
+  sm: "h-8 px-3 text-[11px] uppercase tracking-wide gap-1.5",
+  md: "h-10 px-4 text-[11px] uppercase tracking-wide gap-2",
+  lg: "h-12 px-6 text-[12px] uppercase tracking-wide gap-2.5",
 } as const;
 
 export type ButtonVariant = keyof typeof variants;
@@ -49,8 +49,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         className={cn(
-          "inline-flex items-center justify-center font-sans font-semibold transition-colors duration-150",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
+          "inline-flex items-center justify-center font-sans font-medium transition-all duration-200",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-pv-black",
           "disabled:pointer-events-none disabled:opacity-50",
           variants[variant],
           sizes[size],

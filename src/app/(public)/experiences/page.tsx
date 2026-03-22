@@ -32,41 +32,50 @@ export default async function ExperiencesPage({
     ];
   }
 
-  const experiences = await prisma.experience.findMany({
-    where,
-    include: {
-      hotel: {
-        include: { rooms: { where: { isActive: true }, orderBy: { pricePerNight: "asc" } } },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  let serialized: Array<Record<string, unknown>> = [];
 
-  const serialized = experiences.map((exp) => ({
-    ...exp,
-    hotel: {
-      ...exp.hotel,
-      rooms: exp.hotel.rooms.map((r) => ({
-        ...r,
-        pricePerNight: Number(r.pricePerNight),
-      })),
-    },
-  }));
+  try {
+    const experiences = await prisma.experience.findMany({
+      where,
+      include: {
+        hotel: {
+          include: { rooms: { where: { isActive: true }, orderBy: { pricePerNight: "asc" } } },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    serialized = experiences.map((exp) => ({
+      ...exp,
+      hotel: {
+        ...exp.hotel,
+        rooms: exp.hotel.rooms.map((r) => ({
+          ...r,
+          pricePerNight: Number(r.pricePerNight),
+        })),
+      },
+    }));
+  } catch {
+    // Tables may not exist yet
+  }
 
   return (
-    <section className="bg-white py-16 sm:py-20">
+    <section className="bg-pv-black pt-28 pb-20 sm:pb-24 min-h-screen">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-10">
-          <h1 className="font-serif text-3xl text-navy sm:text-4xl">
+        <div className="mb-12">
+          <span className="micro-label text-gold tracking-[3px]">
+            Discover
+          </span>
+          <h1 className="mt-3 font-serif text-3xl text-white font-light sm:text-4xl">
             All Experiences
           </h1>
           {search && (
-            <p className="mt-2 text-ink-300">
+            <p className="mt-3 text-white/40 font-light">
               Showing results for &ldquo;{search}&rdquo;
             </p>
           )}
         </div>
-        <ExperienceGrid experiences={serialized} />
+        <ExperienceGrid experiences={serialized as never} />
       </div>
     </section>
   );

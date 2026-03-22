@@ -122,12 +122,12 @@ export function RoomForm({ room, onSubmit }: RoomFormProps) {
       </div>
 
       <div>
-        <label className="text-sm font-medium text-navy-500">Description</label>
+        <label className="text-sm font-light text-white/80">Description</label>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={3}
-          className="mt-1.5 w-full rounded-lg border border-navy-100 bg-white px-3 py-2 text-sm text-navy-500 placeholder:text-navy-200 focus:border-vermillion-500 focus:outline-none focus:ring-2 focus:ring-vermillion-300"
+          className="mt-1.5 w-full rounded border border-white/[0.06] bg-pv-black-80 px-3 py-2 text-sm font-light text-white/80 placeholder:text-white/30 focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/30"
           placeholder="Describe the room..."
         />
       </div>
@@ -170,7 +170,7 @@ export function RoomForm({ room, onSubmit }: RoomFormProps) {
 
       {/* Amenities */}
       <div>
-        <label className="text-sm font-medium text-navy-500">Amenities</label>
+        <label className="text-sm font-light text-white/80">Amenities</label>
         <div className="mt-2 flex flex-wrap gap-2">
           {COMMON_AMENITIES.map((amenity) => (
             <button
@@ -179,8 +179,8 @@ export function RoomForm({ room, onSubmit }: RoomFormProps) {
               onClick={() => toggleAmenity(amenity)}
               className={
                 amenities.includes(amenity)
-                  ? "inline-flex items-center gap-1 rounded-full bg-vermillion-500 px-3 py-1.5 text-xs font-medium text-white transition-colors"
-                  : "inline-flex items-center gap-1 rounded-full border border-navy-100 bg-white px-3 py-1.5 text-xs font-medium text-navy-400 transition-colors hover:border-navy-200"
+                  ? "inline-flex items-center gap-1 rounded-full bg-gold px-3 py-1.5 text-xs font-light text-pv-black transition-colors"
+                  : "inline-flex items-center gap-1 rounded-full border border-white/[0.06] bg-pv-black-80 px-3 py-1.5 text-xs font-light text-white/40 transition-colors hover:border-white/[0.12]"
               }
             >
               {amenity}
@@ -192,8 +192,8 @@ export function RoomForm({ room, onSubmit }: RoomFormProps) {
 
       {/* Image upload placeholder */}
       <div>
-        <label className="text-sm font-medium text-navy-500">Images</label>
-        <div className="mt-1.5 flex h-32 items-center justify-center rounded-lg border-2 border-dashed border-navy-100 bg-cream-50 text-sm text-navy-300">
+        <label className="text-sm font-light text-white/80">Images</label>
+        <div className="mt-1.5 flex h-32 items-center justify-center rounded border-2 border-dashed border-white/[0.06] bg-pv-black-90 text-sm font-light text-white/40">
           Image uploader placeholder
         </div>
       </div>
@@ -204,9 +204,9 @@ export function RoomForm({ room, onSubmit }: RoomFormProps) {
           type="checkbox"
           checked={isActive}
           onChange={(e) => setIsActive(e.target.checked)}
-          className="h-4 w-4 rounded border-navy-200 text-vermillion-500 focus:ring-vermillion-300"
+          className="h-4 w-4 rounded border-white/[0.06] text-gold focus:ring-gold/30"
         />
-        <span className="text-sm font-medium text-navy-500">Active</span>
+        <span className="text-sm font-light text-white/80">Active</span>
       </label>
 
       <div className="flex justify-end">

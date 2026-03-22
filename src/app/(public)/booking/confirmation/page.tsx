@@ -72,20 +72,20 @@ export default async function ConfirmationPage({
   };
 
   return (
-    <section className="bg-white py-16 sm:py-20">
+    <section className="bg-pv-black pt-28 py-16 sm:py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <BookingConfirmation booking={serialized as never} />
 
         <div className="mt-10 flex justify-center gap-4">
           <Link
             href="/"
-            className="rounded-xl border border-navy-200 px-6 py-3 text-sm font-semibold text-navy transition-colors hover:bg-navy-50"
+            className="border border-white/[0.06] px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/[0.06]"
           >
             Back to home
           </Link>
           <Link
             href="/experiences"
-            className="rounded-xl bg-vermillion px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-vermillion-600"
+            className="bg-gold px-6 py-3 text-sm font-semibold text-pv-black transition-colors hover:bg-gold/90"
           >
             Browse more experiences
           </Link>

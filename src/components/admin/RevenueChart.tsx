@@ -45,10 +45,10 @@ export function RevenueChart({ data }: RevenueChartProps) {
           type="button"
           onClick={() => setMode("bar")}
           className={cn(
-            "rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
+            "rounded px-3 py-1.5 text-xs font-light transition-colors",
             mode === "bar"
-              ? "bg-vermillion-500 text-white"
-              : "bg-cream-100 text-navy-400 hover:bg-cream-200"
+              ? "bg-gold text-pv-black"
+              : "bg-white/[0.04] text-white/40 hover:bg-white/[0.08]"
           )}
         >
           Bar Chart
@@ -57,10 +57,10 @@ export function RevenueChart({ data }: RevenueChartProps) {
           type="button"
           onClick={() => setMode("line")}
           className={cn(
-            "rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
+            "rounded px-3 py-1.5 text-xs font-light transition-colors",
             mode === "line"
-              ? "bg-vermillion-500 text-white"
-              : "bg-cream-100 text-navy-400 hover:bg-cream-200"
+              ? "bg-gold text-pv-black"
+              : "bg-white/[0.04] text-white/40 hover:bg-white/[0.08]"
           )}
         >
           Line Chart
@@ -72,20 +72,20 @@ export function RevenueChart({ data }: RevenueChartProps) {
         <ResponsiveContainer width="100%" height="100%">
           {mode === "bar" ? (
             <BarChart data={data} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
               <XAxis
                 dataKey="month"
-                tick={{ fontSize: 12, fill: "#6b7280" }}
+                tick={{ fontSize: 12, fill: "rgba(255,255,255,0.4)" }}
               />
               <YAxis
                 yAxisId="revenue"
                 tickFormatter={formatRevenue}
-                tick={{ fontSize: 12, fill: "#6b7280" }}
+                tick={{ fontSize: 12, fill: "rgba(255,255,255,0.4)" }}
               />
               <YAxis
                 yAxisId="bookings"
                 orientation="right"
-                tick={{ fontSize: 12, fill: "#6b7280" }}
+                tick={{ fontSize: 12, fill: "rgba(255,255,255,0.4)" }}
               />
               <Tooltip
                 formatter={(value: unknown, name: unknown) =>
@@ -94,8 +94,10 @@ export function RevenueChart({ data }: RevenueChartProps) {
                     : [Number(value), "Bookings"]
                 }
                 contentStyle={{
-                  borderRadius: "8px",
-                  border: "1px solid #e5e7eb",
+                  borderRadius: "2px",
+                  border: "1px solid rgba(255,255,255,0.06)",
+                  backgroundColor: "#1a1a1a",
+                  color: "rgba(255,255,255,0.8)",
                   fontSize: "12px",
                 }}
               />
@@ -103,34 +105,34 @@ export function RevenueChart({ data }: RevenueChartProps) {
               <Bar
                 yAxisId="revenue"
                 dataKey="revenue"
-                fill="#e74c3c"
+                fill="#c9a84c"
                 radius={[4, 4, 0, 0]}
                 name="Revenue"
               />
               <Bar
                 yAxisId="bookings"
                 dataKey="bookings"
-                fill="#1a2332"
+                fill="rgba(255,255,255,0.2)"
                 radius={[4, 4, 0, 0]}
                 name="Bookings"
               />
             </BarChart>
           ) : (
             <LineChart data={data} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
               <XAxis
                 dataKey="month"
-                tick={{ fontSize: 12, fill: "#6b7280" }}
+                tick={{ fontSize: 12, fill: "rgba(255,255,255,0.4)" }}
               />
               <YAxis
                 yAxisId="revenue"
                 tickFormatter={formatRevenue}
-                tick={{ fontSize: 12, fill: "#6b7280" }}
+                tick={{ fontSize: 12, fill: "rgba(255,255,255,0.4)" }}
               />
               <YAxis
                 yAxisId="bookings"
                 orientation="right"
-                tick={{ fontSize: 12, fill: "#6b7280" }}
+                tick={{ fontSize: 12, fill: "rgba(255,255,255,0.4)" }}
               />
               <Tooltip
                 formatter={(value: unknown, name: unknown) =>
@@ -139,8 +141,10 @@ export function RevenueChart({ data }: RevenueChartProps) {
                     : [Number(value), "Bookings"]
                 }
                 contentStyle={{
-                  borderRadius: "8px",
-                  border: "1px solid #e5e7eb",
+                  borderRadius: "2px",
+                  border: "1px solid rgba(255,255,255,0.06)",
+                  backgroundColor: "#1a1a1a",
+                  color: "rgba(255,255,255,0.8)",
                   fontSize: "12px",
                 }}
               />
@@ -149,7 +153,7 @@ export function RevenueChart({ data }: RevenueChartProps) {
                 yAxisId="revenue"
                 type="monotone"
                 dataKey="revenue"
-                stroke="#e74c3c"
+                stroke="#c9a84c"
                 strokeWidth={2}
                 dot={{ r: 4 }}
                 name="Revenue"
@@ -158,7 +162,7 @@ export function RevenueChart({ data }: RevenueChartProps) {
                 yAxisId="bookings"
                 type="monotone"
                 dataKey="bookings"
-                stroke="#1a2332"
+                stroke="rgba(255,255,255,0.4)"
                 strokeWidth={2}
                 dot={{ r: 4 }}
                 name="Bookings"

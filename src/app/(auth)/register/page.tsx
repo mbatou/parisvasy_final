@@ -72,13 +72,15 @@ export default function RegisterPage() {
 
   return (
     <div>
-      <h2 className="text-center text-2xl text-navy">Create your account</h2>
-      <p className="mt-1 text-center text-sm text-ink-300">
+      <h2 className="text-center font-serif text-2xl text-white font-light">
+        Create your account
+      </h2>
+      <p className="mt-2 text-center text-sm text-white/40 font-light">
         Join PARISVASY and start booking experiences
       </p>
 
       {error && (
-        <div className="mt-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
+        <div className="mt-6 border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
           {error}
         </div>
       )}
@@ -128,11 +130,11 @@ export default function RegisterPage() {
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-ink-300">
+      <p className="mt-6 text-center text-sm text-white/40 font-light">
         Already have an account?{" "}
         <Link
           href="/login"
-          className="font-medium text-vermillion hover:text-vermillion-600"
+          className="font-medium text-gold hover:text-gold-light"
         >
           Sign in
         </Link>

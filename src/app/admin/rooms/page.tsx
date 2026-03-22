@@ -38,14 +38,14 @@ export default async function RoomsPage({
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-navy-500 font-serif">Rooms</h1>
-          <p className="mt-1 text-sm text-navy-300 font-sans">
+          <h1 className="text-2xl font-light text-white font-serif">Rooms</h1>
+          <p className="mt-1 text-sm text-white/40 font-sans">
             Manage room inventory and pricing.
           </p>
         </div>
         <Link
           href="/admin/rooms/new"
-          className="inline-flex items-center gap-2 rounded-lg bg-vermillion-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-vermillion-600"
+          className="inline-flex items-center gap-2 rounded-lg bg-gold text-pv-black px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-gold/80"
         >
           <Plus className="h-4 w-4" />
           New Room
@@ -53,17 +53,17 @@ export default async function RoomsPage({
       </div>
 
       {rooms.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-navy-100 bg-white py-16">
-          <BedDouble className="h-12 w-12 text-navy-200" />
-          <p className="mt-4 text-lg font-medium text-navy-400">
+        <div className="flex flex-col items-center justify-center border border-white/[0.06] bg-pv-black-80 py-16">
+          <BedDouble className="h-12 w-12 text-white/30" />
+          <p className="mt-4 text-lg font-medium text-white/80">
             No rooms yet
           </p>
-          <p className="mt-1 text-sm text-navy-300">
+          <p className="mt-1 text-sm text-white/40">
             Add your first room to start accepting bookings.
           </p>
           <Link
             href="/admin/rooms/new"
-            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-vermillion-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-vermillion-600"
+            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-gold text-pv-black px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-gold/80"
           >
             <Plus className="h-4 w-4" />
             Create Room
@@ -75,7 +75,7 @@ export default async function RoomsPage({
             <Link
               key={room.id}
               href={`/admin/rooms/${room.id}`}
-              className="group rounded-xl border border-navy-100 bg-white p-5 shadow-sm transition-all hover:border-vermillion-200 hover:shadow-md"
+              className="group border border-white/[0.06] bg-pv-black-80 p-5 transition-all hover:border-gold/20"
             >
               {/* Cover image */}
               {room.images[0] ? (
@@ -87,13 +87,13 @@ export default async function RoomsPage({
                   />
                 </div>
               ) : (
-                <div className="mb-4 flex h-40 items-center justify-center rounded-lg bg-cream-100">
-                  <BedDouble className="h-8 w-8 text-navy-200" />
+                <div className="mb-4 flex h-40 items-center justify-center rounded-lg bg-pv-black-90">
+                  <BedDouble className="h-8 w-8 text-white/30" />
                 </div>
               )}
 
               <div className="flex items-start justify-between gap-2">
-                <h3 className="font-serif text-lg font-bold text-navy-500 group-hover:text-vermillion-500 transition-colors">
+                <h3 className="font-serif text-lg font-light text-white group-hover:text-gold transition-colors">
                   {room.name}
                 </h3>
                 <Badge variant="navy" className="shrink-0 capitalize">
@@ -101,7 +101,7 @@ export default async function RoomsPage({
                 </Badge>
               </div>
 
-              <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-navy-300">
+              <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-white/40">
                 <span className="inline-flex items-center gap-1">
                   <Maximize2 className="h-3.5 w-3.5" />
                   {room.size} m&sup2;
@@ -117,9 +117,9 @@ export default async function RoomsPage({
               </div>
 
               <div className="mt-3 flex items-center justify-between">
-                <p className="text-lg font-bold text-navy-500">
+                <p className="text-lg font-bold text-white">
                   {formatCurrency(Number(room.pricePerNight))}
-                  <span className="text-xs font-normal text-navy-300">
+                  <span className="text-xs font-normal text-white/40">
                     /night
                   </span>
                 </p>
@@ -133,13 +133,13 @@ export default async function RoomsPage({
                   {room.amenities.slice(0, 4).map((a) => (
                     <span
                       key={a}
-                      className="rounded-full bg-cream-100 px-2 py-0.5 text-[10px] text-navy-400"
+                      className="rounded-full bg-pv-black-90 px-2 py-0.5 text-[10px] text-white/80"
                     >
                       {a}
                     </span>
                   ))}
                   {room.amenities.length > 4 && (
-                    <span className="rounded-full bg-cream-100 px-2 py-0.5 text-[10px] text-navy-400">
+                    <span className="rounded-full bg-pv-black-90 px-2 py-0.5 text-[10px] text-white/80">
                       +{room.amenities.length - 4}
                     </span>
                   )}

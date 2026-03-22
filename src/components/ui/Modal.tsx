@@ -37,7 +37,7 @@ export function Modal({ open, onClose, title, children, className }: ModalProps)
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Overlay */}
       <div
-        className="fixed inset-0 bg-navy-500/60 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -48,22 +48,22 @@ export function Modal({ open, onClose, title, children, className }: ModalProps)
         aria-modal="true"
         aria-label={title}
         className={cn(
-          "relative z-10 w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl",
+          "relative z-10 w-full max-w-lg bg-pv-black-90 border border-white/[0.08] p-6 shadow-xl",
           "animate-in fade-in zoom-in-95 font-sans",
           className
         )}
       >
         {/* Header */}
         {(title || true) && (
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-5 flex items-center justify-between">
             {title && (
-              <h2 className="text-lg font-semibold text-navy-500 font-serif">
+              <h2 className="text-lg font-serif text-white font-light">
                 {title}
               </h2>
             )}
             <button
               onClick={onClose}
-              className="ml-auto rounded-lg p-1.5 text-navy-300 hover:bg-cream-200 hover:text-navy-500 transition-colors"
+              className="ml-auto p-1.5 text-white/30 hover:text-white transition-colors"
               aria-label="Close"
             >
               <X className="h-5 w-5" />

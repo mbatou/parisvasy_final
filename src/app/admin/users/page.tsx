@@ -24,10 +24,10 @@ export default async function UsersPage() {
   if (role !== "super_admin") {
     return (
       <div className="flex flex-col items-center justify-center py-16">
-        <h1 className="text-2xl font-bold text-navy-500 font-serif">
+        <h1 className="text-2xl font-light text-white font-serif">
           Access Denied
         </h1>
-        <p className="mt-2 text-sm text-navy-300">
+        <p className="mt-2 text-sm text-white/40">
           Only super administrators can manage users.
         </p>
       </div>
@@ -69,16 +69,16 @@ export default async function UsersPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-navy-500 font-serif">
+          <h1 className="text-2xl font-light text-white font-serif">
             Users &amp; Staff
           </h1>
-          <p className="mt-1 text-sm text-navy-300 font-sans">
+          <p className="mt-1 text-sm text-white/40 font-sans">
             Manage staff members and their role assignments.
           </p>
         </div>
         <Link
           href="/admin/users/new"
-          className="inline-flex items-center gap-2 rounded-lg bg-vermillion-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-vermillion-600"
+          className="inline-flex items-center gap-2 rounded-lg bg-gold text-pv-black px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-gold/80"
         >
           Invite Staff
         </Link>
