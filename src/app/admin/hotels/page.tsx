@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { prisma } from "@/lib/prisma";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserStaffAssignments } from "@/lib/auth";
 import { Badge } from "@/components/ui/Badge";
 import type { UserRole } from "@/types";
@@ -35,18 +35,33 @@ export default async function HotelsPage() {
     );
   }
 
-  const hotels = await prisma.hotel.findMany({
-    orderBy: { name: "asc" },
-    include: {
-      _count: {
-        select: {
-          rooms: true,
-          experiences: true,
-          bookings: true,
+  const db = createAdminClient();
+  const { data: hotelsData } = await db
+    .from('Hotel')
+    .select('*')
+    .order('name', { ascending: true });
+
+  const hotelsList = hotelsData ?? [];
+
+  // Fetch counts separately for each hotel
+  const hotels = await Promise.all(
+    hotelsList.map(async (hotel) => {
+      const [roomsRes, experiencesRes, bookingsRes] = await Promise.all([
+        db.from('Room').select('id', { count: 'exact', head: true }).eq('hotelId', hotel.id),
+        db.from('Experience').select('id', { count: 'exact', head: true }).eq('hotelId', hotel.id),
+        db.from('Booking').select('id', { count: 'exact', head: true }).eq('hotelId', hotel.id),
+      ]);
+
+      return {
+        ...hotel,
+        _count: {
+          rooms: roomsRes.count ?? 0,
+          experiences: experiencesRes.count ?? 0,
+          bookings: bookingsRes.count ?? 0,
         },
-      },
-    },
-  });
+      };
+    })
+  );
 
   return (
     <div className="space-y-6">

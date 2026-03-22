@@ -1,45 +1,48 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function GET(request: NextRequest) {
   try {
+    const supabase = createAdminClient();
     const { searchParams } = new URL(request.url);
     const hotelId = searchParams.get("hotelId");
     const category = searchParams.get("category");
     const isFlash = searchParams.get("isFlash");
     const search = searchParams.get("search");
 
-    const where: Record<string, unknown> = { isActive: true };
+    let query = supabase
+      .from("Experience")
+      .select("*, hotel:Hotel(*, rooms:Room(pricePerNight))")
+      .eq("isActive", true)
+      .order("createdAt", { ascending: false });
 
-    if (hotelId) where.hotelId = hotelId;
-    if (category) where.category = category;
-    if (isFlash === "true") where.isFlash = true;
+    if (hotelId) query = query.eq("hotelId", hotelId);
+    if (category) query = query.eq("category", category);
+    if (isFlash === "true") query = query.eq("isFlash", true);
     if (search) {
-      where.OR = [
-        { title: { contains: search, mode: "insensitive" } },
-        { description: { contains: search, mode: "insensitive" } },
-        { location: { contains: search, mode: "insensitive" } },
-      ];
+      query = query.or(
+        `title.ilike.%${search}%,description.ilike.%${search}%,location.ilike.%${search}%`
+      );
     }
 
-    const experiences = await prisma.experience.findMany({
-      where,
-      include: {
-        hotel: {
-          include: {
-            rooms: {
-              where: { isActive: true },
-              orderBy: { pricePerNight: "asc" },
-              take: 1,
-              select: { pricePerNight: true },
-            },
-          },
-        },
-      },
-      orderBy: { createdAt: "desc" },
+    const { data: experiences, error } = await query;
+
+    if (error) throw error;
+
+    // Post-process to filter hotel rooms (active only, cheapest first, take 1)
+    const processed = (experiences ?? []).map((exp) => {
+      if (exp.hotel && exp.hotel.rooms) {
+        // Filter active rooms and get cheapest - since we can't filter nested relations
+        // in PostgREST the same way, we do a simple sort + slice here
+        const rooms = [...exp.hotel.rooms]
+          .sort((a: { pricePerNight: number }, b: { pricePerNight: number }) => a.pricePerNight - b.pricePerNight)
+          .slice(0, 1);
+        return { ...exp, hotel: { ...exp.hotel, rooms } };
+      }
+      return exp;
     });
 
-    return NextResponse.json(experiences);
+    return NextResponse.json(processed);
   } catch (error) {
     console.error("Error listing experiences:", error);
     return NextResponse.json(
@@ -51,6 +54,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = createAdminClient();
     const body = await request.json();
     const {
       hotelId,
@@ -77,13 +81,20 @@ export async function POST(request: NextRequest) {
     // Ensure slug uniqueness
     let slug = baseSlug;
     let suffix = 1;
-    while (await prisma.experience.findUnique({ where: { slug } })) {
+    while (true) {
+      const { data } = await supabase
+        .from("Experience")
+        .select("id")
+        .eq("slug", slug)
+        .single();
+      if (!data) break;
       slug = `${baseSlug}-${suffix}`;
       suffix++;
     }
 
-    const experience = await prisma.experience.create({
-      data: {
+    const { data: experience, error } = await supabase
+      .from("Experience")
+      .insert({
         hotelId,
         title,
         slug,
@@ -96,13 +107,14 @@ export async function POST(request: NextRequest) {
         images: images ?? [],
         coverImage,
         isFlash: isFlash ?? false,
-        flashStart: flashStart ? new Date(flashStart) : null,
-        flashEnd: flashEnd ? new Date(flashEnd) : null,
-      },
-      include: {
-        hotel: true,
-      },
-    });
+        flashStart: flashStart ? new Date(flashStart).toISOString() : null,
+        flashEnd: flashEnd ? new Date(flashEnd).toISOString() : null,
+        updatedAt: new Date().toISOString(),
+      })
+      .select("*, hotel:Hotel(*)")
+      .single();
+
+    if (error) throw error;
 
     return NextResponse.json(experience, { status: 201 });
   } catch (error) {

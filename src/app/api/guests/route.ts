@@ -1,26 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function GET(request: NextRequest) {
   try {
+    const supabase = createAdminClient();
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search");
 
-    const where: Record<string, unknown> = {};
+    let query = supabase
+      .from("Guest")
+      .select("*")
+      .order("createdAt", { ascending: false });
 
     if (search) {
-      where.OR = [
-        { firstName: { contains: search, mode: "insensitive" } },
-        { lastName: { contains: search, mode: "insensitive" } },
-        { email: { contains: search, mode: "insensitive" } },
-        { phone: { contains: search, mode: "insensitive" } },
-      ];
+      query = query.or(
+        `firstName.ilike.%${search}%,lastName.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`
+      );
     }
 
-    const guests = await prisma.guest.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-    });
+    const { data: guests, error } = await query;
+
+    if (error) throw error;
 
     return NextResponse.json(guests);
   } catch (error) {

@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { ExperienceEditClient } from "./ExperienceEditClient";
 
 export default async function EditExperiencePage({
@@ -11,11 +11,14 @@ export default async function EditExperiencePage({
 }) {
   const { id } = await params;
 
-  const experience = await prisma.experience.findUnique({
-    where: { id },
-  });
+  const db = createAdminClient();
+  const { data: experience, error } = await db
+    .from('Experience')
+    .select('*')
+    .eq('id', id)
+    .single();
 
-  if (!experience) {
+  if (error || !experience) {
     notFound();
   }
 

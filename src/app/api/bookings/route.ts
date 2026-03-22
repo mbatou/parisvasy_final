@@ -1,33 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function GET(request: NextRequest) {
   try {
+    const supabase = createAdminClient();
     const { searchParams } = new URL(request.url);
     const hotelId = searchParams.get("hotelId");
     const status = searchParams.get("status");
     const from = searchParams.get("from");
     const to = searchParams.get("to");
 
-    const where: Record<string, unknown> = {};
+    let query = supabase
+      .from("Booking")
+      .select("*, room:Room(*), experience:Experience(*), guest:Guest(*)")
+      .order("checkIn", { ascending: false });
 
-    if (hotelId) where.hotelId = hotelId;
-    if (status) where.status = status;
-    if (from || to) {
-      where.checkIn = {};
-      if (from) (where.checkIn as Record<string, unknown>).gte = new Date(from);
-      if (to) (where.checkIn as Record<string, unknown>).lte = new Date(to);
-    }
+    if (hotelId) query = query.eq("hotelId", hotelId);
+    if (status) query = query.eq("status", status);
+    if (from) query = query.gte("checkIn", new Date(from).toISOString());
+    if (to) query = query.lte("checkIn", new Date(to).toISOString());
 
-    const bookings = await prisma.booking.findMany({
-      where,
-      include: {
-        room: true,
-        experience: true,
-        guest: true,
-      },
-      orderBy: { checkIn: "desc" },
-    });
+    const { data: bookings, error } = await query;
+
+    if (error) throw error;
 
     return NextResponse.json(bookings);
   } catch (error) {
@@ -41,6 +36,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = createAdminClient();
     const body = await request.json();
     const {
       hotelId,
@@ -55,32 +51,36 @@ export async function POST(request: NextRequest) {
 
     // Generate booking reference: PVS-{year}-{4digits}
     const year = new Date().getFullYear();
-    const count = await prisma.booking.count({
-      where: {
-        reference: { startsWith: `PVS-${year}` },
-      },
-    });
-    const reference = `PVS-${year}-${String(count + 1).padStart(4, "0")}`;
+    const { count } = await supabase
+      .from("Booking")
+      .select("id", { count: "exact", head: true })
+      .like("reference", `PVS-${year}%`);
+
+    const reference = `PVS-${year}-${String((count ?? 0) + 1).padStart(4, "0")}`;
 
     // Check room availability
     const checkInDate = new Date(checkIn);
     const checkOutDate = new Date(checkOut);
 
-    const room = await prisma.room.findUnique({ where: { id: roomId } });
-    if (!room) {
+    const { data: room, error: roomError } = await supabase
+      .from("Room")
+      .select("*")
+      .eq("id", roomId)
+      .single();
+
+    if (roomError || !room) {
       return NextResponse.json({ error: "Room not found" }, { status: 404 });
     }
 
-    const overlappingBookings = await prisma.booking.count({
-      where: {
-        roomId,
-        status: { notIn: ["cancelled", "no_show"] },
-        checkIn: { lt: checkOutDate },
-        checkOut: { gt: checkInDate },
-      },
-    });
+    const { count: overlappingBookings } = await supabase
+      .from("Booking")
+      .select("id", { count: "exact", head: true })
+      .eq("roomId", roomId)
+      .not("status", "in", "(cancelled,no_show)")
+      .lt("checkIn", checkOutDate.toISOString())
+      .gt("checkOut", checkInDate.toISOString());
 
-    if (overlappingBookings >= room.totalRooms) {
+    if ((overlappingBookings ?? 0) >= room.totalRooms) {
       return NextResponse.json(
         { error: "Room not available for selected dates" },
         { status: 409 }
@@ -90,25 +90,29 @@ export async function POST(request: NextRequest) {
     // Create guest if needed (upsert by email)
     let guestRecord;
     if (guest?.id) {
-      guestRecord = await prisma.guest.findUnique({
-        where: { id: guest.id },
-      });
+      const { data } = await supabase
+        .from("Guest")
+        .select("*")
+        .eq("id", guest.id)
+        .single();
+      guestRecord = data;
     } else if (guest?.email) {
-      guestRecord = await prisma.guest.upsert({
-        where: { email: guest.email },
-        update: {
-          firstName: guest.firstName,
-          lastName: guest.lastName,
-          phone: guest.phone,
-        },
-        create: {
-          email: guest.email,
-          firstName: guest.firstName,
-          lastName: guest.lastName,
-          phone: guest.phone,
-          nationality: guest.nationality,
-        },
-      });
+      const { data } = await supabase
+        .from("Guest")
+        .upsert(
+          {
+            email: guest.email,
+            firstName: guest.firstName,
+            lastName: guest.lastName,
+            phone: guest.phone,
+            nationality: guest.nationality,
+            updatedAt: new Date().toISOString(),
+          },
+          { onConflict: "email" }
+        )
+        .select()
+        .single();
+      guestRecord = data;
     }
 
     if (!guestRecord) {
@@ -122,27 +126,26 @@ export async function POST(request: NextRequest) {
       (checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)
     );
 
-    const booking = await prisma.booking.create({
-      data: {
+    const { data: booking, error: createError } = await supabase
+      .from("Booking")
+      .insert({
         reference,
         hotelId,
         roomId,
         experienceId,
         guestId: guestRecord.id,
-        checkIn: checkInDate,
-        checkOut: checkOutDate,
+        checkIn: checkInDate.toISOString(),
+        checkOut: checkOutDate.toISOString(),
         nights,
         guestCount: guestCount ?? 2,
         roomTotal,
         status: "pending",
-      },
-      include: {
-        room: true,
-        experience: true,
-        guest: true,
-        hotel: true,
-      },
-    });
+        updatedAt: new Date().toISOString(),
+      })
+      .select("*, room:Room(*), experience:Experience(*), guest:Guest(*), hotel:Hotel(*)")
+      .single();
+
+    if (createError) throw createError;
 
     return NextResponse.json(booking, { status: 201 });
   } catch (error) {

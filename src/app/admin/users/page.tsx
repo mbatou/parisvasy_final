@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { prisma } from "@/lib/prisma";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserStaffAssignments } from "@/lib/auth";
 import type { UserRole } from "@/types";
 import { UsersPageClient } from "./UsersPageClient";
@@ -34,36 +34,50 @@ export default async function UsersPage() {
     );
   }
 
-  const hotels = await prisma.hotel.findMany({
-    select: { id: true, name: true },
-    orderBy: { name: "asc" },
-  });
+  const db = createAdminClient();
 
-  const staffAssignments = await prisma.staffAssignment.findMany({
-    include: {
-      hotel: { select: { id: true, name: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const { data: hotelsData } = await db
+    .from('Hotel')
+    .select('id, name')
+    .order('name', { ascending: true });
+
+  const hotels = hotelsData ?? [];
+
+  const { data: staffAssignmentsData } = await db
+    .from('StaffAssignment')
+    .select('*, hotel:Hotel(id, name)')
+    .order('createdAt', { ascending: false });
+
+  const staffAssignments = staffAssignmentsData ?? [];
 
   // Enrich with guest data where possible (for display names)
-  const enrichedStaff = await Promise.all(
-    staffAssignments.map(async (sa) => {
-      const guest = await prisma.guest.findFirst({
-        where: { authUserId: sa.userId },
-        select: { firstName: true, lastName: true, email: true },
-      });
+  // First, get all unique userIds
+  const userIds = [...new Set(staffAssignments.map((sa) => sa.userId))];
 
-      return {
-        ...sa,
-        role: sa.role as UserRole,
-        name: guest
-          ? `${guest.firstName} ${guest.lastName}`
-          : undefined,
-        email: guest?.email ?? undefined,
-      };
-    })
+  // Batch fetch all guests by authUserId
+  const { data: guestsData } = userIds.length > 0
+    ? await db
+        .from('Guest')
+        .select('authUserId, firstName, lastName, email')
+        .in('authUserId', userIds)
+    : { data: [] };
+
+  const guestsByUserId = new Map(
+    (guestsData ?? []).map((g) => [g.authUserId, g])
   );
+
+  const enrichedStaff = staffAssignments.map((sa) => {
+    const guest = guestsByUserId.get(sa.userId);
+
+    return {
+      ...sa,
+      role: sa.role as UserRole,
+      name: guest
+        ? `${guest.firstName} ${guest.lastName}`
+        : undefined,
+      email: guest?.email ?? undefined,
+    };
+  });
 
   return (
     <div className="space-y-6">

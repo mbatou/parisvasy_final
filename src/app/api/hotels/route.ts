@@ -1,23 +1,48 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function GET() {
   try {
-    const hotels = await prisma.hotel.findMany({
-      where: { isActive: true },
-      include: {
-        _count: {
-          select: {
-            rooms: true,
-            experiences: true,
-            bookings: true,
-          },
-        },
-      },
-      orderBy: { name: "asc" },
-    });
+    const supabase = createAdminClient();
 
-    return NextResponse.json(hotels);
+    const { data: hotels, error } = await supabase
+      .from("Hotel")
+      .select("*")
+      .eq("isActive", true)
+      .order("name", { ascending: true });
+
+    if (error) throw error;
+
+    // Fetch counts separately for each hotel
+    const hotelsWithCounts = await Promise.all(
+      (hotels ?? []).map(async (hotel) => {
+        const [roomsCount, experiencesCount, bookingsCount] = await Promise.all([
+          supabase
+            .from("Room")
+            .select("id", { count: "exact", head: true })
+            .eq("hotelId", hotel.id),
+          supabase
+            .from("Experience")
+            .select("id", { count: "exact", head: true })
+            .eq("hotelId", hotel.id),
+          supabase
+            .from("Booking")
+            .select("id", { count: "exact", head: true })
+            .eq("hotelId", hotel.id),
+        ]);
+
+        return {
+          ...hotel,
+          _count: {
+            rooms: roomsCount.count ?? 0,
+            experiences: experiencesCount.count ?? 0,
+            bookings: bookingsCount.count ?? 0,
+          },
+        };
+      })
+    );
+
+    return NextResponse.json(hotelsWithCounts);
   } catch (error) {
     console.error("Error listing hotels:", error);
     return NextResponse.json(
@@ -29,6 +54,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = createAdminClient();
     // TODO: Add super_admin role check via auth middleware
     const body = await request.json();
     const {
@@ -45,8 +71,9 @@ export async function POST(request: NextRequest) {
       email,
     } = body;
 
-    const hotel = await prisma.hotel.create({
-      data: {
+    const { data: hotel, error } = await supabase
+      .from("Hotel")
+      .insert({
         name,
         slug,
         address,
@@ -58,8 +85,12 @@ export async function POST(request: NextRequest) {
         images: images ?? [],
         phone,
         email,
-      },
-    });
+        updatedAt: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
 
     return NextResponse.json(hotel, { status: 201 });
   } catch (error) {

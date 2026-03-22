@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { prisma } from "@/lib/prisma";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserStaffAssignments } from "@/lib/auth";
 import { formatCurrency } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
@@ -26,13 +26,29 @@ export default async function RoomsPage({
 
   const hotelId = params.hotel ?? assignments[0].hotelId;
 
-  const rooms = await prisma.room.findMany({
-    where: { hotelId },
-    orderBy: { name: "asc" },
-    include: {
-      _count: { select: { bookings: true } },
-    },
-  });
+  const db = createAdminClient();
+  const { data: roomsData } = await db
+    .from('Room')
+    .select('*')
+    .eq('hotelId', hotelId)
+    .order('name', { ascending: true });
+
+  const roomsList = roomsData ?? [];
+
+  // Fetch booking counts for each room
+  const rooms = await Promise.all(
+    roomsList.map(async (room) => {
+      const { count } = await db
+        .from('Booking')
+        .select('id', { count: 'exact', head: true })
+        .eq('roomId', room.id);
+
+      return {
+        ...room,
+        _count: { bookings: count ?? 0 },
+      };
+    })
+  );
 
   return (
     <div className="space-y-6">
@@ -130,7 +146,7 @@ export default async function RoomsPage({
 
               {room.amenities.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-1">
-                  {room.amenities.slice(0, 4).map((a) => (
+                  {room.amenities.slice(0, 4).map((a: string) => (
                     <span
                       key={a}
                       className="rounded-full bg-pv-black-90 px-2 py-0.5 text-[10px] text-white/80"

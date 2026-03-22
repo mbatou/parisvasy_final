@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import {
   Hotel,
@@ -20,17 +20,15 @@ interface BookingPageProps {
 export default async function BookingPage({ params }: BookingPageProps) {
   const { id } = await params;
 
-  const booking = await prisma.booking.findUnique({
-    where: { id },
-    include: {
-      hotel: true,
-      room: true,
-      experience: true,
-      guest: true,
-    },
-  });
+  const supabase = createAdminClient();
 
-  if (!booking) {
+  const { data: booking, error } = await supabase
+    .from('Booking')
+    .select('*, hotel:Hotel(*), room:Room(*), experience:Experience(*), guest:Guest(*)')
+    .eq('id', id)
+    .single();
+
+  if (error || !booking) {
     notFound();
   }
 

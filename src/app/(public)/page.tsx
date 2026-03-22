@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 
-import { prisma } from "@/lib/prisma";
+import { createAdminClient } from "@/lib/supabase/admin";
 import HeroSearch from "@/components/public/HeroSearch";
 import ExperienceGrid from "@/components/public/ExperienceGrid";
 import { SectionReveal } from "@/components/public/SectionReveal";
@@ -16,29 +16,37 @@ export default async function HomePage() {
   let experienceCount = 0;
 
   try {
-    const experiences = await prisma.experience.findMany({
-      where: { isActive: true },
-      include: {
-        hotel: {
-          include: { rooms: { where: { isActive: true }, orderBy: { pricePerNight: "asc" } } },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-      take: 9,
-    });
+    const supabase = createAdminClient();
 
-    experienceCount = await prisma.experience.count({
-      where: { isActive: true },
-    });
+    const { data: experiences, error } = await supabase
+      .from('Experience')
+      .select('*, hotel:Hotel(*, rooms:Room(*))')
+      .eq('isActive', true)
+      .order('createdAt', { ascending: false })
+      .limit(9);
 
-    serialized = experiences.map((exp) => ({
+    if (error) throw error;
+
+    const { count, error: countError } = await supabase
+      .from('Experience')
+      .select('id', { count: 'exact', head: true })
+      .eq('isActive', true);
+
+    if (countError) throw countError;
+
+    experienceCount = count ?? 0;
+
+    serialized = (experiences ?? []).map((exp) => ({
       ...exp,
       hotel: {
         ...exp.hotel,
-        rooms: exp.hotel.rooms.map((r) => ({
-          ...r,
-          pricePerNight: Number(r.pricePerNight),
-        })),
+        rooms: (exp.hotel?.rooms ?? [])
+          .filter((r: Room) => r.isActive)
+          .sort((a: Room, b: Room) => Number(a.pricePerNight) - Number(b.pricePerNight))
+          .map((r: Room) => ({
+            ...r,
+            pricePerNight: Number(r.pricePerNight),
+          })),
       },
     }));
   } catch (error) {

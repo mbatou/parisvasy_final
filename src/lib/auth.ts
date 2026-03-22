@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { prisma } from "@/lib/prisma";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { UserRole } from "@/types";
 
 export async function getCurrentUser() {
@@ -14,23 +14,36 @@ export async function getUserRole(
   userId: string,
   hotelId?: string
 ): Promise<UserRole | null> {
-  const where = hotelId
-    ? { userId, hotelId, isActive: true }
-    : { userId, isActive: true };
+  const supabase = createAdminClient();
 
-  const assignment = await prisma.staffAssignment.findFirst({
-    where,
-    orderBy: { createdAt: "desc" },
-  });
+  let query = supabase
+    .from("StaffAssignment")
+    .select("*")
+    .eq("userId", userId)
+    .eq("isActive", true)
+    .order("createdAt", { ascending: false })
+    .limit(1);
+
+  if (hotelId) {
+    query = query.eq("hotelId", hotelId);
+  }
+
+  const { data: assignment } = await query.single();
 
   return (assignment?.role as UserRole) ?? null;
 }
 
 export async function getUserStaffAssignments(userId: string) {
-  return prisma.staffAssignment.findMany({
-    where: { userId, isActive: true },
-    include: { hotel: true },
-  });
+  const supabase = createAdminClient();
+
+  const { data: assignments, error } = await supabase
+    .from("StaffAssignment")
+    .select("*, hotel:Hotel(*)")
+    .eq("userId", userId)
+    .eq("isActive", true);
+
+  if (error) throw error;
+  return assignments;
 }
 
 export async function requireAuth() {

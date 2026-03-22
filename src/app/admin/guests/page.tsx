@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { prisma } from "@/lib/prisma";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserStaffAssignments } from "@/lib/auth";
 import { formatDate } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
@@ -35,37 +35,75 @@ export default async function GuestsPage({
   const hotelId = params.hotel ?? assignments[0].hotelId;
   const query = params.q?.trim() ?? "";
 
-  // Build the where clause for search
-  const searchFilter = query
-    ? {
-        OR: [
-          { firstName: { contains: query, mode: "insensitive" as const } },
-          { lastName: { contains: query, mode: "insensitive" as const } },
-          { email: { contains: query, mode: "insensitive" as const } },
-          { phone: { contains: query, mode: "insensitive" as const } },
-        ],
-      }
-    : {};
+  const db = createAdminClient();
 
-  // Get guests who have bookings at this hotel
-  const guests = await prisma.guest.findMany({
-    where: {
-      ...searchFilter,
-      bookings: { some: { hotelId } },
-    },
-    include: {
-      _count: { select: { bookings: true } },
-      bookings: {
-        where: { hotelId },
-        orderBy: { checkIn: "desc" },
-        take: 1,
-        select: { checkIn: true, status: true },
-      },
-    },
-    orderBy: { lastName: "asc" },
-    take: 100,
-  });
+  // Step 1: Get guestIds who have bookings at this hotel
+  const { data: bookingGuests } = await db
+    .from('Booking')
+    .select('guestId')
+    .eq('hotelId', hotelId);
 
+  const guestIds = [...new Set((bookingGuests ?? []).map((b) => b.guestId).filter(Boolean))];
+
+  if (guestIds.length === 0) {
+    // No guests with bookings at this hotel
+    return renderPage([], query);
+  }
+
+  // Step 2: Fetch guests by those IDs, with optional search filter
+  let guestsQuery = db
+    .from('Guest')
+    .select('*')
+    .in('id', guestIds)
+    .order('lastName', { ascending: true })
+    .limit(100);
+
+  if (query) {
+    guestsQuery = guestsQuery.or(
+      `firstName.ilike.%${query}%,lastName.ilike.%${query}%,email.ilike.%${query}%,phone.ilike.%${query}%`
+    );
+  }
+
+  const { data: guestsData } = await guestsQuery;
+  const guestsList = guestsData ?? [];
+
+  // Step 3: For each guest, get booking count and last booking
+  const enrichedGuests = await Promise.all(
+    guestsList.map(async (guest) => {
+      const [countRes, lastBookingRes] = await Promise.all([
+        db.from('Booking').select('id', { count: 'exact', head: true }).eq('guestId', guest.id),
+        db.from('Booking')
+          .select('checkIn, status')
+          .eq('guestId', guest.id)
+          .eq('hotelId', hotelId)
+          .order('checkIn', { ascending: false })
+          .limit(1),
+      ]);
+
+      return {
+        ...guest,
+        _count: { bookings: countRes.count ?? 0 },
+        bookings: lastBookingRes.data ?? [],
+      };
+    })
+  );
+
+  return renderPage(enrichedGuests, query);
+}
+
+function renderPage(
+  guests: Array<{
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string | null;
+    nationality: string | null;
+    _count: { bookings: number };
+    bookings: Array<{ checkIn: string; status: string }>;
+  }>,
+  query: string
+) {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">

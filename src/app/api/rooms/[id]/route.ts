@@ -1,21 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const supabase = createAdminClient();
     const { id } = await params;
 
-    const room = await prisma.room.findUnique({
-      where: { id },
-      include: {
-        hotel: true,
-      },
-    });
+    const { data: room, error } = await supabase
+      .from("Room")
+      .select("*, hotel:Hotel(*)")
+      .eq("id", id)
+      .single();
 
-    if (!room) {
+    if (error || !room) {
       return NextResponse.json({ error: "Room not found" }, { status: 404 });
     }
 
@@ -34,16 +34,18 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const supabase = createAdminClient();
     const { id } = await params;
     const body = await request.json();
 
-    const room = await prisma.room.update({
-      where: { id },
-      data: body,
-      include: {
-        hotel: true,
-      },
-    });
+    const { data: room, error } = await supabase
+      .from("Room")
+      .update({ ...body, updatedAt: new Date().toISOString() })
+      .eq("id", id)
+      .select("*, hotel:Hotel(*)")
+      .single();
+
+    if (error) throw error;
 
     return NextResponse.json(room);
   } catch (error) {
@@ -60,11 +62,15 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const supabase = createAdminClient();
     const { id } = await params;
 
-    await prisma.room.delete({
-      where: { id },
-    });
+    const { error } = await supabase
+      .from("Room")
+      .delete()
+      .eq("id", id);
+
+    if (error) throw error;
 
     return NextResponse.json({ success: true });
   } catch (error) {

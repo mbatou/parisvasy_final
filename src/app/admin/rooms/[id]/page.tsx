@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { RoomEditClient } from "./RoomEditClient";
 
 export default async function EditRoomPage({
@@ -11,11 +11,14 @@ export default async function EditRoomPage({
 }) {
   const { id } = await params;
 
-  const room = await prisma.room.findUnique({
-    where: { id },
-  });
+  const db = createAdminClient();
+  const { data: room, error } = await db
+    .from('Room')
+    .select('*')
+    .eq('id', id)
+    .single();
 
-  if (!room) {
+  if (error || !room) {
     notFound();
   }
 

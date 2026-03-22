@@ -2,9 +2,10 @@ export const dynamic = "force-dynamic";
 
 import { notFound } from "next/navigation";
 import Image from "next/image";
-import { prisma } from "@/lib/prisma";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { Badge } from "@/components/ui/Badge";
 import { CATEGORY_LABELS, CATEGORY_COLORS } from "@/types";
+import type { ExperienceCategory } from "@/types";
 import {
   MapPin,
   Clock,
@@ -13,6 +14,7 @@ import {
   Gift,
 } from "lucide-react";
 import BookingSidebar from "./BookingSidebar";
+import type { Room } from "@/types";
 
 interface ExperienceDetailPageProps {
   params: Promise<{ slug: string }>;
@@ -23,25 +25,25 @@ export default async function ExperienceDetailPage({
 }: ExperienceDetailPageProps) {
   const { slug } = await params;
 
-  const experience = await prisma.experience.findUnique({
-    where: { slug },
-    include: {
-      hotel: {
-        include: {
-          rooms: { where: { isActive: true }, orderBy: { pricePerNight: "asc" } },
-        },
-      },
-    },
-  });
+  const supabase = createAdminClient();
 
-  if (!experience || !experience.isActive) {
+  const { data: experience, error } = await supabase
+    .from('Experience')
+    .select('*, hotel:Hotel(*, rooms:Room(*))')
+    .eq('slug', slug)
+    .single();
+
+  if (error || !experience || !experience.isActive) {
     notFound();
   }
 
-  const serializedRooms = (experience.hotel?.rooms ?? []).map((r) => ({
-    ...r,
-    pricePerNight: Number(r.pricePerNight),
-  }));
+  const serializedRooms = (experience.hotel?.rooms ?? [])
+    .filter((r: Room) => r.isActive)
+    .sort((a: Room, b: Room) => Number(a.pricePerNight) - Number(b.pricePerNight))
+    .map((r: Room) => ({
+      ...r,
+      pricePerNight: Number(r.pricePerNight),
+    }));
 
   const gallery = experience.images.length > 0
     ? experience.images
@@ -67,7 +69,7 @@ export default async function ExperienceDetailPage({
             </div>
             {gallery.length > 1 && (
               <div className="hidden w-1/3 flex-col gap-1 pl-1 lg:flex">
-                {gallery.slice(1, 3).map((img, i) => (
+                {gallery.slice(1, 3).map((img: string, i: number) => (
                   <div key={i} className="relative flex-1">
                     <Image
                       src={img}
@@ -96,9 +98,9 @@ export default async function ExperienceDetailPage({
             {/* Title & Meta */}
             <div className="flex flex-wrap items-center gap-2">
               <Badge
-                className={CATEGORY_COLORS[experience.category]}
+                className={CATEGORY_COLORS[experience.category as ExperienceCategory]}
               >
-                {CATEGORY_LABELS[experience.category]}
+                {CATEGORY_LABELS[experience.category as ExperienceCategory]}
               </Badge>
               {experience.isFlash && (
                 <Badge variant="vermillion">Flash deal</Badge>
@@ -155,7 +157,7 @@ export default async function ExperienceDetailPage({
                   What&apos;s included
                 </h3>
                 <ul className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  {experience.inclusions.map((item) => (
+                  {experience.inclusions.map((item: string) => (
                     <li
                       key={item}
                       className="flex items-start gap-2 text-sm text-white/50"

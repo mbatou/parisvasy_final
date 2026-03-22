@@ -2,11 +2,11 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { prisma } from "@/lib/prisma";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserStaffAssignments } from "@/lib/auth";
 import { Badge } from "@/components/ui/Badge";
 import { CATEGORY_LABELS, CATEGORY_COLORS } from "@/types";
-import type { UserRole } from "@/types";
+import type { UserRole, ExperienceCategory } from "@/types";
 import { cn } from "@/lib/utils";
 import { Plus, Sparkles, MapPin, Clock, Users } from "lucide-react";
 
@@ -28,13 +28,29 @@ export default async function ExperiencesPage({
 
   const hotelId = params.hotel ?? assignments[0].hotelId;
 
-  const experiences = await prisma.experience.findMany({
-    where: { hotelId },
-    orderBy: { createdAt: "desc" },
-    include: {
-      _count: { select: { bookings: true } },
-    },
-  });
+  const db = createAdminClient();
+  const { data: experiencesData } = await db
+    .from('Experience')
+    .select('*')
+    .eq('hotelId', hotelId)
+    .order('createdAt', { ascending: false });
+
+  const experiencesList = experiencesData ?? [];
+
+  // Fetch booking counts for each experience
+  const experiences = await Promise.all(
+    experiencesList.map(async (exp) => {
+      const { count } = await db
+        .from('Booking')
+        .select('id', { count: 'exact', head: true })
+        .eq('experienceId', exp.id);
+
+      return {
+        ...exp,
+        _count: { bookings: count ?? 0 },
+      };
+    })
+  );
 
   return (
     <div className="space-y-6">
@@ -103,10 +119,10 @@ export default async function ExperiencesPage({
                 <span
                   className={cn(
                     "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                    CATEGORY_COLORS[exp.category]
+                    CATEGORY_COLORS[exp.category as ExperienceCategory]
                   )}
                 >
-                  {CATEGORY_LABELS[exp.category]}
+                  {CATEGORY_LABELS[exp.category as ExperienceCategory]}
                 </span>
               </div>
 
