@@ -12,7 +12,7 @@ export default function RegisterPage() {
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -25,6 +25,8 @@ export default function RegisterPage() {
     try {
       const supabase = createClient();
 
+      const email = `${username.toLowerCase().trim()}@parisvasy.com`;
+
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -32,6 +34,7 @@ export default function RegisterPage() {
           data: {
             first_name: firstName,
             last_name: lastName,
+            username: username.toLowerCase().trim(),
             role: "customer",
           },
         },
@@ -107,13 +110,13 @@ export default function RegisterPage() {
           />
         </div>
         <Input
-          label="Email"
-          type="email"
-          placeholder="you@example.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          label="Username"
+          type="text"
+          placeholder="your username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
           required
-          autoComplete="email"
+          autoComplete="username"
         />
         <Input
           label="Password"

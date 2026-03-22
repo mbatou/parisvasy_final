@@ -12,7 +12,7 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect");
 
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -24,6 +24,7 @@ function LoginForm() {
 
     try {
       const supabase = createClient();
+      const email = `${username.toLowerCase().trim()}@parisvasy.com`;
 
       const { data, error: signInError } =
         await supabase.auth.signInWithPassword({
@@ -77,13 +78,13 @@ function LoginForm() {
 
       <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-5">
         <Input
-          label="Email"
-          type="email"
-          placeholder="you@example.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          label="Username"
+          type="text"
+          placeholder="your username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
           required
-          autoComplete="email"
+          autoComplete="username"
         />
         <Input
           label="Password"

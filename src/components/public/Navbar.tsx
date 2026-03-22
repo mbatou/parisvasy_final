@@ -31,7 +31,7 @@ const STAFF_ROLES: UserRole[] = [
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
+  const [user, setUser] = useState<{ id: string; email?: string; username?: string } | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const router = useRouter();
   const supabase = createClient();
@@ -48,7 +48,7 @@ export default function Navbar() {
         data: { user: authUser },
       } = await supabase.auth.getUser();
       if (authUser) {
-        setUser({ id: authUser.id, email: authUser.email });
+        setUser({ id: authUser.id, email: authUser.email, username: authUser.user_metadata?.username as string });
         const role = (authUser.user_metadata?.role as UserRole) ?? "customer";
         setUserRole(role);
       }
@@ -59,7 +59,7 @@ export default function Navbar() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
-        setUser({ id: session.user.id, email: session.user.email });
+        setUser({ id: session.user.id, email: session.user.email, username: session.user.user_metadata?.username as string });
         const role =
           (session.user.user_metadata?.role as UserRole) ?? "customer";
         setUserRole(role);
@@ -132,7 +132,7 @@ export default function Navbar() {
                 className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-white/60 transition-colors hover:text-gold"
               >
                 <User className="h-3.5 w-3.5" />
-                {user.email?.split("@")[0] ?? "Account"}
+                {user.username ?? user.email?.split("@")[0] ?? "Account"}
               </Link>
               <button
                 onClick={handleLogout}
@@ -213,7 +213,7 @@ export default function Navbar() {
                   className="flex items-center gap-2 px-3 py-2.5 text-[11px] uppercase tracking-wide text-white/60 hover:text-gold"
                 >
                   <User className="h-3.5 w-3.5" />
-                  {user.email?.split("@")[0] ?? "Account"}
+                  {user.username ?? user.email?.split("@")[0] ?? "Account"}
                 </Link>
                 <button
                   onClick={handleLogout}

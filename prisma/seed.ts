@@ -270,93 +270,111 @@ async function main() {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    // Create or get admin user
-    const { data: existingUsers } = await supabase.auth.admin.listUsers();
-    let adminUserId: string | null = null;
+    // Seed users (username-based: username@parisvasy.com)
+    const seedUsers = [
+      {
+        username: "admin",
+        password: "ParisVasy2026!",
+        firstName: "Admin",
+        lastName: "PARISVASY",
+        role: "super_admin" as const,
+        phone: "+33 1 00 00 00 00",
+      },
+      {
+        username: "gdieme",
+        password: "probiteE@08020",
+        firstName: "Gora",
+        lastName: "DIEME",
+        role: "super_admin" as const,
+        phone: "+33 6 00 00 00 00",
+      },
+    ];
 
-    const existingAdmin = existingUsers?.users?.find(
-      (u) => u.email === "admin@parisvasy.com"
-    );
+    for (const seedUser of seedUsers) {
+      const email = `${seedUser.username}@parisvasy.com`;
+      const { data: existingUsers } = await supabase.auth.admin.listUsers();
+      let userId: string | null = null;
 
-    if (existingAdmin) {
-      adminUserId = existingAdmin.id;
-      console.log(`Admin user already exists: ${existingAdmin.email}`);
-    } else {
-      const { data: newUser, error: createError } =
-        await supabase.auth.admin.createUser({
-          email: "admin@parisvasy.com",
-          password: "ParisVasy2026!",
-          email_confirm: true,
-          user_metadata: {
-            first_name: "Admin",
-            last_name: "PARISVASY",
-            role: "super_admin",
+      const existing = existingUsers?.users?.find((u: { email?: string }) => u.email === email);
+
+      if (existing) {
+        userId = existing.id;
+        console.log(`User already exists: ${seedUser.username}`);
+      } else {
+        const { data: newUser, error: createError } =
+          await supabase.auth.admin.createUser({
+            email,
+            password: seedUser.password,
+            email_confirm: true,
+            user_metadata: {
+              first_name: seedUser.firstName,
+              last_name: seedUser.lastName,
+              username: seedUser.username,
+              role: seedUser.role,
+            },
+          });
+
+        if (createError) {
+          console.error(`Failed to create user ${seedUser.username}:`, createError.message);
+        } else if (newUser?.user) {
+          userId = newUser.user.id;
+          console.log(`User created: ${seedUser.username}`);
+        }
+      }
+
+      if (userId) {
+        const guest = await prisma.guest.upsert({
+          where: { email },
+          update: { authUserId: userId },
+          create: {
+            authUserId: userId,
+            email,
+            firstName: seedUser.firstName,
+            lastName: seedUser.lastName,
+            phone: seedUser.phone,
           },
         });
 
-      if (createError) {
-        console.error("Failed to create admin user:", createError.message);
-      } else if (newUser?.user) {
-        adminUserId = newUser.user.id;
-        console.log(`Admin user created: admin@parisvasy.com`);
-      }
-    }
+        console.log(`Guest record: ${guest.email}`);
 
-    if (adminUserId) {
-      // Create Guest record for admin
-      const adminGuest = await prisma.guest.upsert({
-        where: { email: "admin@parisvasy.com" },
-        update: { authUserId: adminUserId },
-        create: {
-          authUserId: adminUserId,
-          email: "admin@parisvasy.com",
-          firstName: "Admin",
-          lastName: "PARISVASY",
-          phone: "+33 1 00 00 00 00",
-        },
-      });
-
-      console.log(`Admin guest record: ${adminGuest.email}`);
-
-      // Create StaffAssignment
-      await prisma.staffAssignment.upsert({
-        where: {
-          userId_hotelId: {
-            userId: adminUserId,
-            hotelId: hotel.id,
+        await prisma.staffAssignment.upsert({
+          where: {
+            userId_hotelId: {
+              userId,
+              hotelId: hotel.id,
+            },
           },
-        },
-        update: { role: "super_admin", isActive: true },
-        create: {
-          userId: adminUserId,
-          hotelId: hotel.id,
-          role: "super_admin",
-          isActive: true,
-        },
-      });
+          update: { role: seedUser.role, isActive: true },
+          create: {
+            userId,
+            hotelId: hotel.id,
+            role: seedUser.role,
+            isActive: true,
+          },
+        });
 
-      console.log(`Staff assignment created: super_admin at ${hotel.name}`);
+        console.log(`Staff assignment: ${seedUser.role} at ${hotel.name}`);
+      }
     }
   } else {
     console.log(
-      "NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set - skipping admin user creation."
+      "NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set - skipping user creation."
     );
-    console.log("You can create the admin user manually in Supabase Dashboard:");
-    console.log("  Email: admin@parisvasy.com");
-    console.log("  Password: ParisVasy2026!");
-    console.log("  Then add a StaffAssignment with role super_admin");
+    console.log("You can create users manually in Supabase Dashboard.");
+    console.log("  Username: admin  |  Password: ParisVasy2026!");
+    console.log("  Username: gdieme |  Password: probiteE@08020");
 
-    // Still create guest record without auth link
-    await prisma.guest.upsert({
-      where: { email: "admin@parisvasy.com" },
-      update: {},
-      create: {
-        email: "admin@parisvasy.com",
-        firstName: "Admin",
-        lastName: "PARISVASY",
-        phone: "+33 1 00 00 00 00",
-      },
-    });
+    // Still create guest records without auth link
+    for (const u of [
+      { email: "admin@parisvasy.com", firstName: "Admin", lastName: "PARISVASY", phone: "+33 1 00 00 00 00" },
+      { email: "gdieme@parisvasy.com", firstName: "Gora", lastName: "DIEME", phone: "+33 6 00 00 00 00" },
+    ]) {
+      await prisma.guest.upsert({
+        where: { email: u.email },
+        update: {},
+        create: u,
+      });
+    }
   }
 
   // Create sample guest bookings
@@ -432,10 +450,9 @@ async function main() {
 
   console.log("Sample bookings created");
   console.log("\nSeed completed successfully!");
-  console.log("\nAdmin credentials:");
-  console.log("  Email: admin@parisvasy.com");
-  console.log("  Password: ParisVasy2026!");
-  console.log("  Role: super_admin");
+  console.log("\nCredentials:");
+  console.log("  Username: admin   | Password: ParisVasy2026! | Role: super_admin");
+  console.log("  Username: gdieme  | Password: probiteE@08020 | Role: super_admin");
 }
 
 main()

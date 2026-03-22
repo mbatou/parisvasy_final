@@ -47,7 +47,8 @@ export function useAuth() {
   }, []);
 
   const signIn = useCallback(
-    async (email: string, password: string) => {
+    async (username: string, password: string) => {
+      const email = `${username.toLowerCase().trim()}@parisvasy.com`;
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -60,11 +61,12 @@ export function useAuth() {
   );
 
   const signUp = useCallback(
-    async (email: string, password: string, metadata?: Record<string, unknown>) => {
+    async (username: string, password: string, metadata?: Record<string, unknown>) => {
+      const email = `${username.toLowerCase().trim()}@parisvasy.com`;
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: metadata },
+        options: { data: { ...metadata, username: username.toLowerCase().trim() } },
       });
       if (error) throw error;
       return data;
