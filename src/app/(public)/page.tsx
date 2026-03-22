@@ -4,9 +4,14 @@ import { prisma } from "@/lib/prisma";
 import HeroSearch from "@/components/public/HeroSearch";
 import ExperienceGrid from "@/components/public/ExperienceGrid";
 import { Star, Compass, Gift, ShieldCheck } from "lucide-react";
+import type { Experience, Room } from "@/types";
+
+type SerializedExperience = Experience & {
+  hotel?: { rooms?: Room[] };
+};
 
 export default async function HomePage() {
-  let serialized: Array<Record<string, unknown>> = [];
+  let serialized: SerializedExperience[] = [];
   let experienceCount = 0;
 
   try {
