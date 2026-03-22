@@ -9,7 +9,6 @@ import {
   Menu,
   X,
   LogIn,
-  UserPlus,
   LogOut,
   User,
   LayoutDashboard,
@@ -151,13 +150,6 @@ export default function Navbar() {
                 <LogIn className="h-3.5 w-3.5" />
                 Login
               </Link>
-              <Link
-                href="/register"
-                className="flex items-center gap-1.5 border border-gold px-4 py-2 text-[11px] uppercase tracking-wide text-gold transition-all hover:bg-gold hover:text-pv-black"
-              >
-                <UserPlus className="h-3.5 w-3.5" />
-                Register
-              </Link>
             </>
           )}
         </div>
@@ -232,14 +224,6 @@ export default function Navbar() {
                 >
                   <LogIn className="h-3.5 w-3.5" />
                   Login
-                </Link>
-                <Link
-                  href="/register"
-                  onClick={() => setMobileOpen(false)}
-                  className="mt-2 flex items-center justify-center gap-2 border border-gold px-4 py-2.5 text-[11px] uppercase tracking-wide text-gold hover:bg-gold hover:text-pv-black"
-                >
-                  <UserPlus className="h-3.5 w-3.5" />
-                  Register
                 </Link>
               </>
             )}

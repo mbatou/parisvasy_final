@@ -2,7 +2,6 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -101,13 +100,7 @@ function LoginForm() {
       </form>
 
       <p className="mt-6 text-center text-sm text-white/40 font-light">
-        Don&apos;t have an account?{" "}
-        <Link
-          href="/register"
-          className="font-medium text-gold hover:text-gold-light"
-        >
-          Register
-        </Link>
+        Contact your administrator to get access.
       </p>
     </div>
   );

@@ -60,21 +60,6 @@ export function useAuth() {
     []
   );
 
-  const signUp = useCallback(
-    async (username: string, password: string, metadata?: Record<string, unknown>) => {
-      const email = `${username.toLowerCase().trim()}@parisvasy.com`;
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { data: { ...metadata, username: username.toLowerCase().trim() } },
-      });
-      if (error) throw error;
-      return data;
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
-  );
-
   const signOut = useCallback(async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
@@ -86,7 +71,6 @@ export function useAuth() {
     session: state.session,
     loading: state.loading,
     signIn,
-    signUp,
     signOut,
   };
 }
