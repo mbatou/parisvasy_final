@@ -12,6 +12,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
     const type = formData.get("type") as string | null;
+    const entityId = formData.get("entityId") as string | null;
 
     if (!file) {
       return NextResponse.json({ error: "File is required" }, { status: 400 });
@@ -24,12 +25,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate file type
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      return NextResponse.json(
+        { error: "Invalid file type. Allowed: JPEG, PNG, WebP" },
+        { status: 400 }
+      );
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      return NextResponse.json(
+        { error: "File too large. Max 5MB." },
+        { status: 400 }
+      );
+    }
+
     const bucket = BUCKET_MAP[type];
     const supabase = createAdminClient();
 
-    // Generate unique filename
+    // Generate unique filename with entityId prefix
     const ext = file.name.split(".").pop();
-    const filename = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
+    const prefix = entityId ? `${entityId}/` : "";
+    const filename = `${prefix}${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
 
     const buffer = Buffer.from(await file.arrayBuffer());
 

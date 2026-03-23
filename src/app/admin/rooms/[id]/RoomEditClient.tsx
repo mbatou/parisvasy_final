@@ -11,17 +11,30 @@ interface RoomEditClientProps {
 export function RoomEditClient({ room }: RoomEditClientProps) {
   const router = useRouter();
 
-  const handleSubmit = async (data: Record<string, unknown>) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleSubmit = async (data: any) => {
     const res = await fetch(`/api/rooms/${room.id}`, {
-      method: "PUT",
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
 
     if (res.ok) {
       router.push("/admin/rooms");
+      router.refresh();
     }
   };
 
-  return <RoomForm room={room} onSubmit={handleSubmit} />;
+  const handleDelete = async () => {
+    const res = await fetch(`/api/rooms/${room.id}`, {
+      method: "DELETE",
+    });
+
+    if (res.ok) {
+      router.push("/admin/rooms");
+      router.refresh();
+    }
+  };
+
+  return <RoomForm room={room} onSubmit={handleSubmit} onDelete={handleDelete} />;
 }

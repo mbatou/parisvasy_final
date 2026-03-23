@@ -5,6 +5,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { BookingsTable } from "@/components/admin/BookingsTable";
 import type { Booking } from "@/types";
 
+function getCookie(name: string): string | undefined {
+  const match = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
+  return match ? match[2] : undefined;
+}
+
 function BookingsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -14,7 +19,15 @@ function BookingsContent() {
   const fetchBookings = useCallback(async () => {
     setLoading(true);
     try {
-      const qs = searchParams.toString();
+      const params = new URLSearchParams(searchParams.toString());
+      // Add hotel filter from cookie if not already set
+      if (!params.get("hotelId")) {
+        const selectedHotel = getCookie("pv_selected_hotel");
+        if (selectedHotel && selectedHotel !== "all") {
+          params.set("hotelId", selectedHotel);
+        }
+      }
+      const qs = params.toString();
       const res = await fetch(`/api/bookings${qs ? `?${qs}` : ""}`);
       if (res.ok) {
         const data = await res.json();

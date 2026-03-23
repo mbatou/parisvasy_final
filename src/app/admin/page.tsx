@@ -12,11 +12,11 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getUserStaffAssignments } from "@/lib/auth";
+import { getEffectiveHotelId } from "@/lib/hotel-context";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { StatsCards } from "@/components/admin/StatsCards";
 import { STATUS_LABELS } from "@/types";
-import type { UserRole, BookingStatus } from "@/types";
+import type { BookingStatus } from "@/types";
 
 const STATUS_BADGE_COLORS: Record<BookingStatus, string> = {
   pending: "bg-yellow-500/15 text-yellow-400",
@@ -27,12 +27,7 @@ const STATUS_BADGE_COLORS: Record<BookingStatus, string> = {
   no_show: "bg-red-500/15 text-red-400",
 };
 
-export default async function AdminDashboardPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ hotel?: string }>;
-}) {
-  const params = await searchParams;
+export default async function AdminDashboardPage() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -40,16 +35,14 @@ export default async function AdminDashboardPage({
 
   if (!user) return null;
 
-  let assignments: Array<{ role: string; hotelId: string }> = [];
+  let ctx;
   try {
-    assignments = await getUserStaffAssignments(user.id);
+    ctx = await getEffectiveHotelId(user.id);
   } catch {
-    // Tables may not exist
+    return null;
   }
-  if (assignments.length === 0) return null;
 
-  const role = assignments[0].role as UserRole;
-  const hotelId = params.hotel ?? assignments[0].hotelId;
+  const { hotelId } = ctx;
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -73,31 +66,36 @@ export default async function AdminDashboardPage({
   try {
     const db = createAdminClient();
 
+    // Build queries with optional hotel filter
+    let ciQ = db.from('Booking').select('id', { count: 'exact', head: true });
+    let coQ = db.from('Booking').select('id', { count: 'exact', head: true });
+    let abQ = db.from('Booking').select('id', { count: 'exact', head: true });
+    let mrQ = db.from('Booking').select('roomTotal');
+    let trQ = db.from('Room').select('totalRooms');
+    let orQ = db.from('Booking').select('id', { count: 'exact', head: true });
+
+    if (hotelId) {
+      ciQ = ciQ.eq('hotelId', hotelId);
+      coQ = coQ.eq('hotelId', hotelId);
+      abQ = abQ.eq('hotelId', hotelId);
+      mrQ = mrQ.eq('hotelId', hotelId);
+      trQ = trQ.eq('hotelId', hotelId);
+      orQ = orQ.eq('hotelId', hotelId);
+    }
+
     const [ciRes, coRes, abRes, mrRes, trRes, orRes] = await Promise.all([
-      db.from('Booking').select('id', { count: 'exact', head: true })
-        .eq('hotelId', hotelId)
-        .gte('checkIn', today.toISOString())
+      ciQ.gte('checkIn', today.toISOString())
         .lt('checkIn', tomorrow.toISOString())
         .in('status', ['confirmed', 'checked_in']),
-      db.from('Booking').select('id', { count: 'exact', head: true })
-        .eq('hotelId', hotelId)
-        .gte('checkOut', today.toISOString())
+      coQ.gte('checkOut', today.toISOString())
         .lt('checkOut', tomorrow.toISOString())
         .in('status', ['checked_in', 'checked_out']),
-      db.from('Booking').select('id', { count: 'exact', head: true })
-        .eq('hotelId', hotelId)
-        .in('status', ['confirmed', 'checked_in']),
-      db.from('Booking').select('roomTotal')
-        .eq('hotelId', hotelId)
-        .gte('createdAt', monthStart.toISOString())
+      abQ.in('status', ['confirmed', 'checked_in']),
+      mrQ.gte('createdAt', monthStart.toISOString())
         .lte('createdAt', monthEnd.toISOString())
         .not('status', 'eq', 'cancelled'),
-      db.from('Room').select('totalRooms')
-        .eq('hotelId', hotelId)
-        .eq('isActive', true),
-      db.from('Booking').select('id', { count: 'exact', head: true })
-        .eq('hotelId', hotelId)
-        .eq('status', 'checked_in')
+      trQ.eq('isActive', true),
+      orQ.eq('status', 'checked_in')
         .lte('checkIn', today.toISOString())
         .gte('checkOut', today.toISOString()),
     ]);
@@ -109,12 +107,13 @@ export default async function AdminDashboardPage({
     roomCount = (trRes.data ?? []).reduce((sum: number, r: { totalRooms: number }) => sum + (r.totalRooms ?? 0), 0);
     occupiedRooms = orRes.count ?? 0;
 
-    const { data: recentData } = await db
+    let recentQuery = db
       .from('Booking')
       .select('*, guest:Guest(firstName, lastName), room:Room(name), experience:Experience(title)')
-      .eq('hotelId', hotelId)
       .order('createdAt', { ascending: false })
       .limit(10);
+    if (hotelId) recentQuery = recentQuery.eq('hotelId', hotelId);
+    const { data: recentData } = await recentQuery;
 
     recentBookings = (recentData ?? []) as typeof recentBookings;
   } catch {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 
 export async function GET(
   request: NextRequest,
@@ -41,32 +42,56 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
 
-    const {
-      status,
-      checkedInAt,
-      checkedInBy,
-      checkedOutAt,
-      checkedOutBy,
-      notes,
-      stripeSetupIntentId,
-      stripePaymentMethodId,
-      cardLast4,
-      cardBrand,
-      warrantyCollected,
-    } = body;
+    // Get current user for check-in/out tracking
+    const authClient = await createClient();
+    const { data: { user } } = await authClient.auth.getUser();
 
     const data: Record<string, unknown> = { updatedAt: new Date().toISOString() };
-    if (status !== undefined) data.status = status;
-    if (checkedInAt !== undefined) data.checkedInAt = new Date(checkedInAt).toISOString();
-    if (checkedInBy !== undefined) data.checkedInBy = checkedInBy;
-    if (checkedOutAt !== undefined) data.checkedOutAt = new Date(checkedOutAt).toISOString();
-    if (checkedOutBy !== undefined) data.checkedOutBy = checkedOutBy;
-    if (notes !== undefined) data.notes = notes;
-    if (stripeSetupIntentId !== undefined) data.stripeSetupIntentId = stripeSetupIntentId;
-    if (stripePaymentMethodId !== undefined) data.stripePaymentMethodId = stripePaymentMethodId;
-    if (cardLast4 !== undefined) data.cardLast4 = cardLast4;
-    if (cardBrand !== undefined) data.cardBrand = cardBrand;
-    if (warrantyCollected !== undefined) data.warrantyCollected = warrantyCollected;
+
+    // Handle action-based status changes
+    if (body.action) {
+      const now = new Date().toISOString();
+      switch (body.action) {
+        case "confirm":
+          data.status = "confirmed";
+          break;
+        case "check_in":
+          data.status = "checked_in";
+          data.checkedInAt = now;
+          if (user) data.checkedInBy = user.id;
+          break;
+        case "check_out":
+          data.status = "checked_out";
+          data.checkedOutAt = now;
+          if (user) data.checkedOutBy = user.id;
+          break;
+        case "cancel":
+          data.status = "cancelled";
+          break;
+        case "no_show":
+          data.status = "no_show";
+          break;
+      }
+    }
+
+    // Handle direct field updates
+    if (body.status !== undefined && !body.action) data.status = body.status;
+    if (body.checkIn !== undefined) data.checkIn = new Date(body.checkIn).toISOString();
+    if (body.checkOut !== undefined) data.checkOut = new Date(body.checkOut).toISOString();
+    if (body.roomId !== undefined) data.roomId = body.roomId;
+    if (body.guestCount !== undefined) data.guestCount = body.guestCount;
+    if (body.notes !== undefined) data.notes = body.notes;
+    if (body.nights !== undefined) data.nights = body.nights;
+    if (body.roomTotal !== undefined) data.roomTotal = body.roomTotal;
+    if (body.checkedInAt !== undefined) data.checkedInAt = new Date(body.checkedInAt).toISOString();
+    if (body.checkedInBy !== undefined) data.checkedInBy = body.checkedInBy;
+    if (body.checkedOutAt !== undefined) data.checkedOutAt = new Date(body.checkedOutAt).toISOString();
+    if (body.checkedOutBy !== undefined) data.checkedOutBy = body.checkedOutBy;
+    if (body.stripeSetupIntentId !== undefined) data.stripeSetupIntentId = body.stripeSetupIntentId;
+    if (body.stripePaymentMethodId !== undefined) data.stripePaymentMethodId = body.stripePaymentMethodId;
+    if (body.cardLast4 !== undefined) data.cardLast4 = body.cardLast4;
+    if (body.cardBrand !== undefined) data.cardBrand = body.cardBrand;
+    if (body.warrantyCollected !== undefined) data.warrantyCollected = body.warrantyCollected;
 
     const { data: booking, error } = await supabase
       .from("Booking")

@@ -3,19 +3,14 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getUserStaffAssignments } from "@/lib/auth";
+import { getEffectiveHotelId } from "@/lib/hotel-context";
 import { Badge } from "@/components/ui/Badge";
 import { CATEGORY_LABELS, CATEGORY_COLORS } from "@/types";
-import type { UserRole, ExperienceCategory } from "@/types";
+import type { ExperienceCategory } from "@/types";
 import { cn } from "@/lib/utils";
 import { Plus, Sparkles, MapPin, Clock, Users } from "lucide-react";
 
-export default async function ExperiencesPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ hotel?: string }>;
-}) {
-  const params = await searchParams;
+export default async function ExperiencesPage() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -23,17 +18,21 @@ export default async function ExperiencesPage({
 
   if (!user) return null;
 
-  const assignments = await getUserStaffAssignments(user.id);
-  if (assignments.length === 0) return null;
-
-  const hotelId = params.hotel ?? assignments[0].hotelId;
+  let ctx;
+  try {
+    ctx = await getEffectiveHotelId(user.id);
+  } catch {
+    return null;
+  }
+  const { hotelId } = ctx;
 
   const db = createAdminClient();
-  const { data: experiencesData } = await db
+  let expQuery = db
     .from('Experience')
     .select('*')
-    .eq('hotelId', hotelId)
     .order('createdAt', { ascending: false });
+  if (hotelId) expQuery = expQuery.eq('hotelId', hotelId);
+  const { data: experiencesData } = await expQuery;
 
   const experiencesList = experiencesData ?? [];
 

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   CalendarCheck,
@@ -55,17 +56,23 @@ interface SidebarProps {
   userRole: UserRole;
   currentHotelId: string;
   hotels: Pick<Hotel, "id" | "name">[];
-  currentPath: string;
+  onHotelChange?: (hotelId: string) => void;
 }
 
 export function Sidebar({
   userRole,
   currentHotelId,
   hotels,
-  currentPath,
+  onHotelChange,
 }: SidebarProps) {
+  const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(true);
   const [hotelOpen, setHotelOpen] = useState(false);
+
+  const isActive = (href: string) => {
+    if (href === "/admin") return pathname === "/admin";
+    return pathname.startsWith(href);
+  };
 
   const visibleItems = NAV_ITEMS.filter(
     (item) => !item.roles || item.roles.includes(userRole)
@@ -113,9 +120,7 @@ export function Sidebar({
         {/* Navigation */}
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-5">
           {visibleItems.map((item) => {
-            const isActive =
-              currentPath === item.href ||
-              (item.href !== "/admin" && currentPath.startsWith(item.href));
+            const active = isActive(item.href);
             const Icon = item.icon;
 
             return (
@@ -125,7 +130,7 @@ export function Sidebar({
                 onClick={() => setCollapsed(true)}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 text-[11px] uppercase tracking-wide font-medium transition-all",
-                  isActive
+                  active
                     ? "bg-gold/10 text-gold border-l-2 border-gold"
                     : "text-white/40 hover:bg-white/[0.04] hover:text-white/70 border-l-2 border-transparent"
                 )}
@@ -137,9 +142,10 @@ export function Sidebar({
           })}
         </nav>
 
-        {/* Hotel selector - super_admin only */}
-        {userRole === "super_admin" && hotels.length > 0 && (
+        {/* Hotel selector - super_admin gets dropdown, others see static name */}
+        {userRole === "super_admin" && hotels.length > 0 ? (
           <div className="border-t border-white/[0.06] px-3 py-4">
+            <p className="mb-2 text-[10px] uppercase tracking-wider text-white/30 px-1">Hotel</p>
             <div className="relative">
               <button
                 type="button"
@@ -147,7 +153,7 @@ export function Sidebar({
                 className="flex w-full items-center justify-between bg-pv-black-80 border border-white/[0.06] px-3 py-2.5 text-[11px] uppercase tracking-wide text-white/60 transition-colors hover:border-gold/20"
               >
                 <span className="truncate">
-                  {selectedHotel?.name || "Select hotel"}
+                  {selectedHotel?.name || "All Hotels"}
                 </span>
                 <ChevronDown
                   className={cn(
@@ -157,29 +163,58 @@ export function Sidebar({
                 />
               </button>
               {hotelOpen && (
-                <div className="absolute bottom-full left-0 mb-1 w-full bg-pv-black-80 border border-white/[0.06] py-1 shadow-lg">
+                <div className="absolute bottom-full left-0 mb-1 w-full bg-pv-black-80 border border-white/[0.06] py-1 shadow-lg z-50">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onHotelChange?.("all");
+                      setHotelOpen(false);
+                      setCollapsed(true);
+                    }}
+                    className={cn(
+                      "block w-full truncate px-3 py-2 text-sm text-left transition-colors font-light",
+                      !currentHotelId || currentHotelId === "all"
+                        ? "bg-gold/10 text-gold"
+                        : "text-white/50 hover:bg-white/[0.04] hover:text-white"
+                    )}
+                  >
+                    All Hotels
+                  </button>
                   {hotels.map((hotel) => (
-                    <Link
+                    <button
+                      type="button"
                       key={hotel.id}
-                      href={`/admin?hotel=${hotel.id}`}
                       onClick={() => {
+                        onHotelChange?.(hotel.id);
                         setHotelOpen(false);
                         setCollapsed(true);
                       }}
                       className={cn(
-                        "block truncate px-3 py-2 text-sm transition-colors font-light",
+                        "block w-full truncate px-3 py-2 text-sm text-left transition-colors font-light",
                         hotel.id === currentHotelId
                           ? "bg-gold/10 text-gold"
                           : "text-white/50 hover:bg-white/[0.04] hover:text-white"
                       )}
                     >
                       {hotel.name}
-                    </Link>
+                    </button>
                   ))}
                 </div>
               )}
             </div>
           </div>
+        ) : (
+          selectedHotel && (
+            <div className="border-t border-white/[0.06] px-3 py-4">
+              <p className="mb-2 text-[10px] uppercase tracking-wider text-white/30 px-1">Hotel</p>
+              <div className="flex items-center gap-2 px-3 py-2.5 bg-pv-black-80 border border-white/[0.06]">
+                <Building2 className="h-3.5 w-3.5 text-gold flex-shrink-0" />
+                <span className="text-[11px] uppercase tracking-wide text-white/60 truncate">
+                  {selectedHotel.name}
+                </span>
+              </div>
+            </div>
+          )
         )}
       </aside>
     </>

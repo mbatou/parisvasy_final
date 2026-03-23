@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
+import { ImageUploader } from "@/components/admin/ImageUploader";
 import { X } from "lucide-react";
 import type { Room, RoomType } from "@/types";
 
@@ -28,24 +29,30 @@ const COMMON_AMENITIES = [
   "Jacuzzi",
   "City View",
   "King Bed",
+  "Eiffel View",
+  "Bathtub",
 ];
+
+interface RoomFormData {
+  name: string;
+  type: RoomType;
+  description: string;
+  size: number;
+  maxGuests: number;
+  pricePerNight: number;
+  totalRooms: number;
+  amenities: string[];
+  images: string[];
+  isActive: boolean;
+}
 
 interface RoomFormProps {
   room?: Room;
-  onSubmit: (data: {
-    name: string;
-    type: RoomType;
-    description: string;
-    size: number;
-    maxGuests: number;
-    pricePerNight: number;
-    totalRooms: number;
-    amenities: string[];
-    isActive: boolean;
-  }) => void;
+  onSubmit: (data: RoomFormData) => void;
+  onDelete?: () => void;
 }
 
-export function RoomForm({ room, onSubmit }: RoomFormProps) {
+export function RoomForm({ room, onSubmit, onDelete }: RoomFormProps) {
   const [name, setName] = useState(room?.name ?? "");
   const [type, setType] = useState<RoomType>(room?.type ?? "classic");
   const [description, setDescription] = useState(room?.description ?? "");
@@ -56,9 +63,11 @@ export function RoomForm({ room, onSubmit }: RoomFormProps) {
   );
   const [totalRooms, setTotalRooms] = useState(room?.totalRooms ?? 1);
   const [amenities, setAmenities] = useState<string[]>(room?.amenities ?? []);
+  const [images, setImages] = useState<string[]>(room?.images ?? []);
   const [isActive, setIsActive] = useState(room?.isActive ?? true);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const toggleAmenity = (amenity: string) => {
     setAmenities((prev) =>
@@ -94,6 +103,7 @@ export function RoomForm({ room, onSubmit }: RoomFormProps) {
       pricePerNight,
       totalRooms,
       amenities,
+      images,
       isActive,
     });
   };
@@ -190,11 +200,17 @@ export function RoomForm({ room, onSubmit }: RoomFormProps) {
         </div>
       </div>
 
-      {/* Image upload placeholder */}
+      {/* Images */}
       <div>
         <label className="text-sm font-light text-white/80">Images</label>
-        <div className="mt-1.5 flex h-32 items-center justify-center rounded border-2 border-dashed border-white/[0.06] bg-pv-black-90 text-sm font-light text-white/40">
-          Image uploader placeholder
+        <div className="mt-1.5">
+          <ImageUploader
+            bucket="room-images"
+            entityId={room?.id ?? "new"}
+            existingImages={images}
+            onImagesChange={setImages}
+            maxImages={10}
+          />
         </div>
       </div>
 
@@ -209,10 +225,35 @@ export function RoomForm({ room, onSubmit }: RoomFormProps) {
         <span className="text-sm font-light text-white/80">Active</span>
       </label>
 
-      <div className="flex justify-end">
-        <Button type="submit" loading={submitting}>
-          {room ? "Update Room" : "Create Room"}
-        </Button>
+      <div className="flex items-center justify-between">
+        {room && onDelete && (
+          <div>
+            {!confirmDelete ? (
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => setConfirmDelete(true)}
+              >
+                Delete Room
+              </Button>
+            ) : (
+              <div className="flex items-center gap-2 rounded border border-red-500/30 bg-red-900/30 px-4 py-2">
+                <span className="text-sm font-light text-red-400">Are you sure?</span>
+                <Button type="button" variant="destructive" size="sm" onClick={onDelete}>
+                  Yes, delete
+                </Button>
+                <Button type="button" variant="ghost" size="sm" onClick={() => setConfirmDelete(false)}>
+                  No
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+        <div className="ml-auto">
+          <Button type="submit" loading={submitting}>
+            {room ? "Update Room" : "Create Room"}
+          </Button>
+        </div>
       </div>
     </form>
   );
