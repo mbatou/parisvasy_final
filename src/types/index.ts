@@ -115,6 +115,8 @@ export interface Booking {
   stripePaymentMethodId: string | null;
   cardLast4: string | null;
   cardBrand: string | null;
+  cardHolder: string | null;
+  cardExpiry: string | null;
   warrantyCollected: boolean;
   checkedInAt: Date | null;
   checkedInBy: string | null;

@@ -1,89 +1,93 @@
 "use client";
 
 import { useState } from "react";
-import {
-  useStripe,
-  useElements,
-  CardElement,
-} from "@stripe/react-stripe-js";
 import { cn } from "@/lib/utils";
 import { CreditCard, Loader2, ShieldCheck, AlertCircle } from "lucide-react";
 
 interface CardWarrantyFormProps {
-  clientSecret: string;
-  onSuccess: (paymentMethodId: string) => void;
+  onSuccess: (cardData: { cardNumber: string; cardExpiry: string; cardCvc: string; cardHolder: string }) => void;
   bookingId: string;
 }
 
-const CARD_ELEMENT_OPTIONS = {
-  style: {
-    base: {
-      fontSize: "16px",
-      fontFamily: "Manrope, system-ui, sans-serif",
-      color: "#ffffff",
-      "::placeholder": {
-        color: "rgba(255,255,255,0.4)",
-      },
-    },
-    invalid: {
-      color: "#DC2626",
-      iconColor: "#DC2626",
-    },
-  },
-};
-
 export default function CardWarrantyForm({
-  clientSecret,
   onSuccess,
   bookingId,
 }: CardWarrantyFormProps) {
-  const stripe = useStripe();
-  const elements = useElements();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [cardComplete, setCardComplete] = useState(false);
+  const [cardHolder, setCardHolder] = useState("");
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardExpiry, setCardExpiry] = useState("");
+  const [cardCvc, setCardCvc] = useState("");
+
+  // Format card number with spaces every 4 digits
+  const handleCardNumberChange = (value: string) => {
+    const digits = value.replace(/\D/g, "").slice(0, 16);
+    const formatted = digits.replace(/(\d{4})(?=\d)/g, "$1 ");
+    setCardNumber(formatted);
+  };
+
+  // Format expiry as MM/YY
+  const handleExpiryChange = (value: string) => {
+    const digits = value.replace(/\D/g, "").slice(0, 4);
+    if (digits.length >= 3) {
+      setCardExpiry(`${digits.slice(0, 2)}/${digits.slice(2)}`);
+    } else {
+      setCardExpiry(digits);
+    }
+  };
+
+  // Detect card brand from number
+  const getCardBrand = (num: string): string => {
+    const d = num.replace(/\s/g, "");
+    if (/^4/.test(d)) return "visa";
+    if (/^5[1-5]/.test(d) || /^2[2-7]/.test(d)) return "mastercard";
+    if (/^3[47]/.test(d)) return "amex";
+    if (/^6(?:011|5)/.test(d)) return "discover";
+    return "unknown";
+  };
+
+  const rawDigits = cardNumber.replace(/\s/g, "");
+  const cardBrand = getCardBrand(rawDigits);
+  const isComplete =
+    cardHolder.trim().length >= 2 &&
+    rawDigits.length >= 15 &&
+    cardExpiry.length === 5 &&
+    cardCvc.length >= 3;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
 
-    if (!stripe || !elements) {
+    if (!isComplete) {
+      setError("Please fill in all card details.");
       return;
     }
 
-    const cardElement = elements.getElement(CardElement);
-    if (!cardElement) {
+    // Basic expiry validation
+    const [mm, yy] = cardExpiry.split("/");
+    const month = parseInt(mm, 10);
+    const year = parseInt(yy, 10) + 2000;
+    const now = new Date();
+    if (month < 1 || month > 12) {
+      setError("Invalid expiry month.");
+      return;
+    }
+    if (new Date(year, month) < new Date(now.getFullYear(), now.getMonth() + 1)) {
+      setError("Card has expired.");
       return;
     }
 
     setLoading(true);
-    setError(null);
-
     try {
-      const { error: setupError, setupIntent } =
-        await stripe.confirmCardSetup(clientSecret, {
-          payment_method: {
-            card: cardElement,
-          },
-        });
-
-      if (setupError) {
-        setError(
-          setupError.message ?? "An error occurred while saving your card."
-        );
-        setLoading(false);
-        return;
-      }
-
-      if (setupIntent?.payment_method) {
-        const paymentMethodId =
-          typeof setupIntent.payment_method === "string"
-            ? setupIntent.payment_method
-            : setupIntent.payment_method.id;
-        onSuccess(paymentMethodId);
-      }
-    } catch (err) {
+      onSuccess({
+        cardNumber: rawDigits,
+        cardExpiry,
+        cardCvc,
+        cardHolder: cardHolder.trim(),
+      });
+    } catch {
       setError("An unexpected error occurred. Please try again.");
-    } finally {
       setLoading(false);
     }
   };
@@ -104,37 +108,79 @@ export default function CardWarrantyForm({
         </div>
       </div>
 
-      {/* Card Element */}
+      {/* Card Holder */}
+      <div className="flex flex-col gap-1.5">
+        <label className="text-sm font-medium text-white">Cardholder name</label>
+        <input
+          type="text"
+          value={cardHolder}
+          onChange={(e) => setCardHolder(e.target.value)}
+          placeholder="John Doe"
+          required
+          className="h-10 border border-white/[0.06] bg-pv-black-80 px-4 text-sm text-white placeholder:text-white/30 focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/30 font-light"
+        />
+      </div>
+
+      {/* Card Number */}
       <div className="flex flex-col gap-1.5">
         <label className="flex items-center gap-1.5 text-sm font-medium text-white">
           <CreditCard className="h-4 w-4" />
-          Card details
+          Card number
         </label>
-        <div
-          className={cn(
-            "rounded-lg border bg-pv-black-80 px-4 py-3 transition-colors",
-            error ? "border-red-500" : "border-white/[0.06]"
+        <div className="relative">
+          <input
+            type="text"
+            inputMode="numeric"
+            value={cardNumber}
+            onChange={(e) => handleCardNumberChange(e.target.value)}
+            placeholder="4242 4242 4242 4242"
+            required
+            className={cn(
+              "h-10 w-full border bg-pv-black-80 px-4 pr-20 text-sm text-white placeholder:text-white/30 focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/30 font-light font-mono tracking-wider",
+              error ? "border-red-500" : "border-white/[0.06]"
+            )}
+          />
+          {cardBrand !== "unknown" && (
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] uppercase tracking-wide font-semibold text-gold/60">
+              {cardBrand}
+            </span>
           )}
-        >
-          <CardElement
-            options={CARD_ELEMENT_OPTIONS}
-            onChange={(e) => {
-              setCardComplete(e.complete);
-              if (e.error) {
-                setError(e.error.message);
-              } else {
-                setError(null);
-              }
-            }}
+        </div>
+      </div>
+
+      {/* Expiry & CVC */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-medium text-white">Expiry</label>
+          <input
+            type="text"
+            inputMode="numeric"
+            value={cardExpiry}
+            onChange={(e) => handleExpiryChange(e.target.value)}
+            placeholder="MM/YY"
+            required
+            className="h-10 border border-white/[0.06] bg-pv-black-80 px-4 text-sm text-white placeholder:text-white/30 focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/30 font-light font-mono"
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-medium text-white">CVC</label>
+          <input
+            type="text"
+            inputMode="numeric"
+            value={cardCvc}
+            onChange={(e) => setCardCvc(e.target.value.replace(/\D/g, "").slice(0, 4))}
+            placeholder="123"
+            required
+            className="h-10 border border-white/[0.06] bg-pv-black-80 px-4 text-sm text-white placeholder:text-white/30 focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/30 font-light font-mono"
           />
         </div>
       </div>
 
       {/* Error Message */}
       {error && (
-        <div className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2">
-          <AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
-          <p className="text-sm text-red-600">{error}</p>
+        <div className="flex items-center gap-2 border border-red-500/30 bg-red-500/10 px-3 py-2">
+          <AlertCircle className="h-4 w-4 shrink-0 text-red-400" />
+          <p className="text-sm text-red-400">{error}</p>
         </div>
       )}
 
@@ -146,7 +192,7 @@ export default function CardWarrantyForm({
       {/* Submit */}
       <button
         type="submit"
-        disabled={!stripe || !cardComplete || loading}
+        disabled={!isComplete || loading}
         className={cn(
           "flex items-center justify-center gap-2 px-6 py-3 text-sm font-semibold text-pv-black transition-colors",
           "bg-gold hover:bg-gold/90",

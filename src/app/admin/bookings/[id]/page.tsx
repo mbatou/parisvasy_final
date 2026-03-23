@@ -314,6 +314,30 @@ export default async function BookingDetailPage({
                   </p>
                 </div>
               )}
+              {/* Full card details — only visible to finance_manager, hotel_manager, super_admin */}
+              {["finance_manager", "hotel_manager", "super_admin"].includes(role) && booking.warrantyCollected && (
+                <div className="mt-3 space-y-2 border-t border-white/[0.06] pt-3">
+                  <p className="text-[10px] uppercase tracking-wider text-white/30">Payment details (restricted)</p>
+                  {booking.cardHolder && (
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-white/60">Holder</p>
+                      <p className="text-sm font-medium text-white">{booking.cardHolder}</p>
+                    </div>
+                  )}
+                  {booking.cardExpiry && (
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-white/60">Expiry</p>
+                      <p className="text-sm font-medium text-white">{booking.cardExpiry}</p>
+                    </div>
+                  )}
+                  {booking.cardLast4 && (
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-white/60">Number</p>
+                      <p className="text-sm font-mono text-white">**** **** **** {booking.cardLast4}</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
