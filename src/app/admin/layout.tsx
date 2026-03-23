@@ -47,6 +47,38 @@ export default async function AdminLayout({
     // Tables might not exist yet
   }
 
+  // Auto-recover super_admin access if assignments were lost (e.g. hotel cascade delete)
+  if (assignments.length === 0) {
+    const metaRole = user.user_metadata?.role as string | undefined;
+
+    if (metaRole === "super_admin") {
+      try {
+        const db = createAdminClient();
+        // Find any hotel to reassign to
+        const { data: anyHotel } = await db
+          .from("Hotel")
+          .select("id, name")
+          .limit(1)
+          .single();
+
+        if (anyHotel) {
+          await db.from("StaffAssignment").insert({
+            userId: user.id,
+            hotelId: anyHotel.id,
+            role: "super_admin",
+            isActive: true,
+          });
+
+          assignments = [
+            { role: "super_admin", hotelId: anyHotel.id, hotel: anyHotel },
+          ];
+        }
+      } catch {
+        // Recovery failed, fall through to access denied
+      }
+    }
+  }
+
   if (assignments.length === 0) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-pv-black">
