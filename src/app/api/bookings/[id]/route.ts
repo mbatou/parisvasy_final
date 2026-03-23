@@ -95,12 +95,25 @@ export async function PATCH(
     if (body.cardExpiry !== undefined) data.cardExpiry = body.cardExpiry;
     if (body.warrantyCollected !== undefined) data.warrantyCollected = body.warrantyCollected;
 
-    const { data: booking, error } = await supabase
+    let { data: booking, error } = await supabase
       .from("Booking")
       .update(data)
       .eq("id", id)
       .select("*, hotel:Hotel(*), room:Room(*), experience:Experience(*), guest:Guest(*)")
       .single();
+
+    // If update fails (e.g. new columns not migrated yet), retry without optional card fields
+    if (error && (data.cardHolder !== undefined || data.cardExpiry !== undefined)) {
+      const { cardHolder, cardExpiry, ...safeData } = data;
+      const retry = await supabase
+        .from("Booking")
+        .update(safeData)
+        .eq("id", id)
+        .select("*, hotel:Hotel(*), room:Room(*), experience:Experience(*), guest:Guest(*)")
+        .single();
+      booking = retry.data;
+      error = retry.error;
+    }
 
     if (error) throw error;
 
