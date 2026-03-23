@@ -10,7 +10,7 @@ const EXPERIENCE_LINKS = [
 ];
 
 const COMPANY_LINKS = [
-  { href: "/#how-it-works", label: "How it works" },
+  { href: "/how-it-works", label: "How it works" },
   { href: "/about", label: "About us" },
   { href: "/contact", label: "Contact" },
   { href: "/careers", label: "Careers" },
@@ -111,6 +111,8 @@ export default function Footer() {
             <Link href="/privacy" className="transition-colors hover:text-gold">Privacy</Link>
             {" · "}
             <Link href="/cookies" className="transition-colors hover:text-gold">Cookies</Link>
+            {" · "}
+            <Link href="/login" className="transition-colors hover:text-gold">Staff login</Link>
           </p>
         </div>
       </div>

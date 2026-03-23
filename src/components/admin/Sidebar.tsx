@@ -12,6 +12,7 @@ import {
   BarChart3,
   Building2,
   UserCog,
+  MessageSquare,
   Menu,
   X,
   ChevronDown,
@@ -50,6 +51,12 @@ const NAV_ITEMS: NavItem[] = [
     href: "/admin/users",
     icon: UserCog,
     roles: ["super_admin"],
+  },
+  {
+    label: "Messages",
+    href: "/admin/messages",
+    icon: MessageSquare,
+    roles: ["super_admin", "hotel_manager"],
   },
 ];
 
