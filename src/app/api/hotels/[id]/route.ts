@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 
 export async function GET(
   request: NextRequest,
@@ -100,6 +101,52 @@ export async function DELETE(
   try {
     const supabase = createAdminClient();
     const { id } = await params;
+
+    // Before deleting: reassign super_admin staff to another hotel
+    // so they don't lose admin access due to CASCADE delete
+    const { data: staff } = await supabase
+      .from("StaffAssignment")
+      .select("id, userId, role")
+      .eq("hotelId", id)
+      .eq("isActive", true);
+
+    const superAdmins = (staff ?? []).filter((s) => s.role === "super_admin");
+
+    if (superAdmins.length > 0) {
+      // Find another hotel to reassign them to
+      const { data: otherHotels } = await supabase
+        .from("Hotel")
+        .select("id")
+        .neq("id", id)
+        .limit(1);
+
+      if (otherHotels && otherHotels.length > 0) {
+        // Reassign super_admins to the other hotel
+        const targetHotelId = otherHotels[0].id;
+        for (const admin of superAdmins) {
+          // Check if they already have an assignment at the target hotel
+          const { data: existing } = await supabase
+            .from("StaffAssignment")
+            .select("id")
+            .eq("userId", admin.userId)
+            .eq("hotelId", targetHotelId)
+            .limit(1);
+
+          if (existing && existing.length > 0) {
+            // Already assigned there, just remove the one being deleted
+            continue;
+          }
+
+          // Move the assignment to the other hotel
+          await supabase
+            .from("StaffAssignment")
+            .update({ hotelId: targetHotelId })
+            .eq("id", admin.id);
+        }
+      }
+      // If no other hotel exists, the super_admin assignments will be cascade-deleted
+      // but the auto-recovery in the admin layout will handle restoration when a new hotel is created
+    }
 
     const { error } = await supabase
       .from("Hotel")
