@@ -15,7 +15,9 @@ import type { UserRole } from "@/types";
 
 const NAV_LINKS = [
   { href: "/experiences", label: "Experiences" },
-  { href: "/#how-it-works", label: "How it works" },
+  { href: "/how-it-works", label: "How it works" },
+  { href: "/about", label: "About" },
+  { href: "/contact", label: "Contact" },
 ];
 
 const STAFF_ROLES: UserRole[] = [
