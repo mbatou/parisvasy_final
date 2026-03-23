@@ -8,9 +8,7 @@ import { cn } from "@/lib/utils";
 import {
   Menu,
   X,
-  LogIn,
   LogOut,
-  User,
   LayoutDashboard,
 } from "lucide-react";
 import type { UserRole } from "@/types";
@@ -115,23 +113,23 @@ export default function Navbar() {
 
         {/* Desktop Right Side */}
         <div className="hidden items-center gap-4 md:flex">
-          {isStaff && (
-            <Link
-              href="/admin"
-              className="micro-label flex items-center gap-1.5 border border-gold/25 px-4 py-2 text-gold transition-all hover:bg-gold hover:text-pv-black"
-            >
-              <LayoutDashboard className="h-3.5 w-3.5" />
-              Back office
-            </Link>
-          )}
-          {user ? (
-            <div className="flex items-center gap-4">
+          {/* Book Now CTA — always visible */}
+          <Link
+            href="/experiences"
+            className="micro-label bg-gold px-5 py-2 text-pv-black font-medium transition-colors hover:bg-gold-light"
+          >
+            Book now
+          </Link>
+
+          {/* Staff: Back office + logout */}
+          {isStaff && user && (
+            <>
               <Link
                 href="/admin"
-                className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-white/60 transition-colors hover:text-gold"
+                className="micro-label flex items-center gap-1.5 border border-gold/25 px-4 py-2 text-gold transition-all hover:bg-gold hover:text-pv-black"
               >
-                <User className="h-3.5 w-3.5" />
-                {user.username ?? user.email?.split("@")[0] ?? "Account"}
+                <LayoutDashboard className="h-3.5 w-3.5" />
+                Back office
               </Link>
               <button
                 onClick={handleLogout}
@@ -140,16 +138,6 @@ export default function Navbar() {
                 <LogOut className="h-3.5 w-3.5" />
                 Logout
               </button>
-            </div>
-          ) : (
-            <>
-              <Link
-                href="/login"
-                className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-white/60 transition-colors hover:text-gold"
-              >
-                <LogIn className="h-3.5 w-3.5" />
-                Login
-              </Link>
             </>
           )}
         </div>
@@ -183,6 +171,15 @@ export default function Navbar() {
                 </Link>
               </li>
             ))}
+            <li>
+              <Link
+                href="/experiences"
+                onClick={() => setMobileOpen(false)}
+                className="block px-3 py-2.5 text-[11px] uppercase tracking-wide text-gold font-medium transition-colors hover:text-gold-light"
+              >
+                Book now
+              </Link>
+            </li>
             {isStaff && (
               <li>
                 <Link
@@ -196,38 +193,17 @@ export default function Navbar() {
               </li>
             )}
           </ul>
-          <div className="flex flex-col gap-2 border-t border-white/[0.06] pt-4">
-            {user ? (
-              <>
-                <Link
-                  href="/admin"
-                  onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-2 px-3 py-2.5 text-[11px] uppercase tracking-wide text-white/60 hover:text-gold"
-                >
-                  <User className="h-3.5 w-3.5" />
-                  {user.username ?? user.email?.split("@")[0] ?? "Account"}
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center gap-2 px-3 py-2.5 text-[11px] uppercase tracking-wide text-white/40 hover:text-gold"
-                >
-                  <LogOut className="h-3.5 w-3.5" />
-                  Logout
-                </button>
-              </>
-            ) : (
-              <>
-                <Link
-                  href="/login"
-                  onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-2 px-3 py-2.5 text-[11px] uppercase tracking-wide text-white/60 hover:text-gold"
-                >
-                  <LogIn className="h-3.5 w-3.5" />
-                  Login
-                </Link>
-              </>
-            )}
-          </div>
+          {isStaff && user && (
+            <div className="flex flex-col gap-2 border-t border-white/[0.06] pt-4">
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-3 py-2.5 text-[11px] uppercase tracking-wide text-white/40 hover:text-gold"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                Logout
+              </button>
+            </div>
+          )}
         </div>
       )}
     </header>

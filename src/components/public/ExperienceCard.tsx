@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/utils";
-import { MapPin, Clock, Users, Sparkles, Gift } from "lucide-react";
+import { MapPin, Clock, Users, Sparkles, Gift, CalendarDays } from "lucide-react";
 import type { Experience, Room } from "@/types";
 import { CATEGORY_LABELS } from "@/types";
 
@@ -12,6 +12,18 @@ interface ExperienceCardProps {
 }
 
 export default function ExperienceCard({ experience, index = 0 }: ExperienceCardProps) {
+  // Format availability dates
+  const formatAvailDate = (date: Date | string | null) => {
+    if (!date) return "";
+    const d = new Date(date);
+    return d.toLocaleDateString("en-GB", { month: "short", day: "numeric" });
+  };
+
+  const hasAvailabilityWindow = experience.availableFrom && experience.availableTo;
+  const availabilityLabel = hasAvailabilityWindow
+    ? `${formatAvailDate(experience.availableFrom)} \u2013 ${formatAvailDate(experience.availableTo)}`
+    : null;
+
   const rooms = experience.rooms ?? experience.hotel?.rooms ?? [];
   const minPrice = rooms.length
     ? Math.min(
@@ -92,6 +104,14 @@ export default function ExperienceCard({ experience, index = 0 }: ExperienceCard
             Up to {experience.maxGroup}
           </span>
         </div>
+
+        {/* Availability badge */}
+        {availabilityLabel && (
+          <p className="mt-2 flex items-center gap-1 text-[10px] text-gold/60 font-light">
+            <CalendarDays className="h-3 w-3" />
+            Available {availabilityLabel}
+          </p>
+        )}
 
         {/* Price + Reserve */}
         <div className="mt-5 flex items-end justify-between">

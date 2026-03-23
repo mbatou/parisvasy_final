@@ -83,6 +83,8 @@ export interface Experience {
   inclusions: string[];
   images: string[];
   coverImage: string | null;
+  availableFrom: Date | null;
+  availableTo: Date | null;
   isFlash: boolean;
   flashStart: Date | null;
   flashEnd: Date | null;

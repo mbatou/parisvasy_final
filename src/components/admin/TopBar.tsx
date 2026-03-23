@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Search, Bell, LogOut, ChevronRight } from "lucide-react";
+import { Search, Bell, LogOut, ChevronRight, ExternalLink } from "lucide-react";
 import { getInitials } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { Badge } from "@/components/ui/Badge";
@@ -71,6 +71,17 @@ export function TopBar({ user, role, breadcrumbs }: TopBarProps) {
             className="h-9 w-56 border border-white/[0.06] bg-pv-black-80 pl-9 pr-3 text-sm text-white/80 placeholder:text-white/20 transition-all focus:border-gold/30 focus:outline-none focus:ring-1 focus:ring-gold/30 font-light"
           />
         </div>
+
+        {/* View site */}
+        <a
+          href="/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hidden items-center gap-1.5 border border-white/[0.08] px-3 py-1.5 text-[11px] uppercase tracking-wide text-white/40 transition-colors hover:border-gold/30 hover:text-gold md:flex"
+        >
+          View site
+          <ExternalLink className="h-3 w-3" />
+        </a>
 
         {/* Notifications */}
         <button

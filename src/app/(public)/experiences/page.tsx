@@ -8,6 +8,8 @@ interface ExperiencesPageProps {
   searchParams: Promise<{
     category?: string;
     q?: string;
+    checkIn?: string;
+    checkOut?: string;
   }>;
 }
 
@@ -17,6 +19,8 @@ export default async function ExperiencesPage({
   const params = await searchParams;
   const category = params.category as ExperienceCategory | undefined;
   const search = params.q;
+  const checkIn = params.checkIn;
+  const checkOut = params.checkOut;
 
   let serialized: Array<Record<string, unknown>> = [];
 
@@ -35,6 +39,13 @@ export default async function ExperiencesPage({
 
     if (search) {
       query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%,location.ilike.%${search}%`);
+    }
+
+    // Filter by availability window
+    if (checkIn && checkOut) {
+      query = query.or(
+        `and(availableFrom.is.null,availableTo.is.null),and(availableFrom.lte.${new Date(checkIn).toISOString()},availableTo.gte.${new Date(checkOut).toISOString()})`
+      );
     }
 
     const { data: experiences, error } = await query;

@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/Badge";
 import { CATEGORY_LABELS, CATEGORY_COLORS } from "@/types";
 import type { ExperienceCategory } from "@/types";
 import { cn } from "@/lib/utils";
-import { Plus, Sparkles, MapPin, Clock, Users } from "lucide-react";
+import { Plus, Sparkles, MapPin, Clock, Users, CalendarDays } from "lucide-react";
 
 export default async function ExperiencesPage() {
   const supabase = await createClient();
@@ -138,6 +138,20 @@ export default async function ExperiencesPage() {
                   <Users className="h-3.5 w-3.5" />
                   Max {exp.maxGroup}
                 </span>
+              </div>
+
+              {/* Availability */}
+              <div className="mt-3 flex items-center gap-1.5 text-xs text-white/40">
+                <CalendarDays className="h-3 w-3" />
+                {exp.availableFrom && exp.availableTo ? (
+                  <span>
+                    {new Date(exp.availableFrom).toLocaleDateString("en-GB", { month: "short", day: "numeric" })}
+                    {" \u2013 "}
+                    {new Date(exp.availableTo).toLocaleDateString("en-GB", { month: "short", day: "numeric", year: "numeric" })}
+                  </span>
+                ) : (
+                  <span>Always</span>
+                )}
               </div>
 
               <div className="mt-3 flex items-center justify-between">

@@ -27,6 +27,9 @@ const experienceSchema = z.object({
   duration: z.string().min(1, "Duration is required"),
   maxGroup: z.number().min(1, "Must allow at least 1 guest"),
   inclusions: z.array(z.string()),
+  hasAvailabilityDates: z.boolean(),
+  availableFrom: z.string().optional(),
+  availableTo: z.string().optional(),
   isFlash: z.boolean(),
   flashStart: z.string().optional(),
   flashEnd: z.string().optional(),
@@ -37,6 +40,8 @@ type ExperienceFormData = z.infer<typeof experienceSchema> & {
   images: string[];
   coverImage: string;
   hotelId?: string;
+  availableFrom?: string;
+  availableTo?: string;
 };
 
 interface ExperienceFormProps {
@@ -73,6 +78,19 @@ export function ExperienceForm({
   const [inclusionInput, setInclusionInput] = useState("");
   const [images, setImages] = useState<string[]>(experience?.images ?? []);
   const [coverImage, setCoverImage] = useState(experience?.coverImage ?? "");
+  const [hasAvailabilityDates, setHasAvailabilityDates] = useState(
+    !!(experience?.availableFrom || experience?.availableTo)
+  );
+  const [availableFrom, setAvailableFrom] = useState(
+    experience?.availableFrom
+      ? new Date(experience.availableFrom).toISOString().split("T")[0]
+      : ""
+  );
+  const [availableTo, setAvailableTo] = useState(
+    experience?.availableTo
+      ? new Date(experience.availableTo).toISOString().split("T")[0]
+      : ""
+  );
   const [isFlash, setIsFlash] = useState(experience?.isFlash ?? false);
   const [flashStart, setFlashStart] = useState(
     experience?.flashStart
@@ -121,6 +139,9 @@ export function ExperienceForm({
       duration,
       maxGroup,
       inclusions,
+      hasAvailabilityDates,
+      availableFrom: hasAvailabilityDates ? availableFrom : undefined,
+      availableTo: hasAvailabilityDates ? availableTo : undefined,
       isFlash,
       flashStart: isFlash ? flashStart : undefined,
       flashEnd: isFlash ? flashEnd : undefined,
@@ -301,6 +322,47 @@ export function ExperienceForm({
             maxImages={10}
           />
         </div>
+      </div>
+
+      {/* Availability */}
+      <div className="space-y-3 rounded border border-white/[0.06] p-4">
+        <p className="text-sm font-medium text-white/80">Availability</p>
+        <label className="flex items-center gap-3">
+          <input
+            type="radio"
+            name="availability"
+            checked={!hasAvailabilityDates}
+            onChange={() => setHasAvailabilityDates(false)}
+            className="h-4 w-4 border-white/[0.06] text-gold focus:ring-gold/30"
+          />
+          <span className="text-sm font-light text-white/80">Always available (no date restriction)</span>
+        </label>
+        <label className="flex items-center gap-3">
+          <input
+            type="radio"
+            name="availability"
+            checked={hasAvailabilityDates}
+            onChange={() => setHasAvailabilityDates(true)}
+            className="h-4 w-4 border-white/[0.06] text-gold focus:ring-gold/30"
+          />
+          <span className="text-sm font-light text-white/80">Available between specific dates</span>
+        </label>
+        {hasAvailabilityDates && (
+          <div className="grid gap-4 md:grid-cols-2">
+            <Input
+              label="Available from"
+              type="date"
+              value={availableFrom}
+              onChange={(e) => setAvailableFrom(e.target.value)}
+            />
+            <Input
+              label="Available to"
+              type="date"
+              value={availableTo}
+              onChange={(e) => setAvailableTo(e.target.value)}
+            />
+          </div>
+        )}
       </div>
 
       {/* Flash deal */}

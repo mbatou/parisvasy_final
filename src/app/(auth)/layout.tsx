@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
 export default function AuthLayout({
   children,
@@ -10,17 +11,24 @@ export default function AuthLayout({
       <div className="mb-8 text-center">
         <Link
           href="/"
-          className="font-sans text-[15px] font-semibold tracking-[4px] text-gold"
+          className="font-sans text-[15px] font-semibold tracking-[4px] text-gold transition-colors hover:text-gold-light"
         >
           PARISVASY
         </Link>
         <p className="mt-3 text-sm text-white/40 font-light">
-          Book a room, live an experience
+          Staff portal &mdash; Back-office access
         </p>
       </div>
       <div className="w-full max-w-md bg-pv-black-80 border border-white/[0.06] p-8">
         {children}
       </div>
+      <Link
+        href="/"
+        className="mt-6 flex items-center gap-1.5 text-sm text-white/40 font-light transition-colors hover:text-gold"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" />
+        Return to website
+      </Link>
     </div>
   );
 }

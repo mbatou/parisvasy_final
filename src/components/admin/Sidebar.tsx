@@ -15,6 +15,7 @@ import {
   Menu,
   X,
   ChevronDown,
+  ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { UserRole, Hotel } from "@/types";
@@ -141,6 +142,19 @@ export function Sidebar({
             );
           })}
         </nav>
+
+        {/* View website link */}
+        <div className="border-t border-white/[0.06] px-3 py-3">
+          <a
+            href="/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 px-3 py-2.5 text-[11px] uppercase tracking-wide font-medium text-white/40 hover:bg-white/[0.04] hover:text-gold transition-all border-l-2 border-transparent"
+          >
+            <ExternalLink className="h-4 w-4 flex-shrink-0" />
+            <span>View website</span>
+          </a>
+        </div>
 
         {/* Hotel selector - super_admin gets dropdown, others see static name */}
         {userRole === "super_admin" && hotels.length > 0 ? (

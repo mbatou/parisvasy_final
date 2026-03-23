@@ -54,7 +54,9 @@ export async function middleware(request: NextRequest) {
 
   if (isAuthRoute && user) {
     const url = request.nextUrl.clone();
-    url.pathname = "/";
+    const role = user.user_metadata?.role;
+    const isStaff = ["super_admin", "hotel_manager", "finance_manager", "front_desk"].includes(role);
+    url.pathname = isStaff ? "/admin" : "/";
     return NextResponse.redirect(url);
   }
 
