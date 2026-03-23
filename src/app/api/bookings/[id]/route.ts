@@ -91,6 +91,8 @@ export async function PATCH(
     if (body.stripePaymentMethodId !== undefined) data.stripePaymentMethodId = body.stripePaymentMethodId;
     if (body.cardLast4 !== undefined) data.cardLast4 = body.cardLast4;
     if (body.cardBrand !== undefined) data.cardBrand = body.cardBrand;
+    if (body.cardHolder !== undefined) data.cardHolder = body.cardHolder;
+    if (body.cardExpiry !== undefined) data.cardExpiry = body.cardExpiry;
     if (body.warrantyCollected !== undefined) data.warrantyCollected = body.warrantyCollected;
 
     const { data: booking, error } = await supabase
