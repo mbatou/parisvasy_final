@@ -5,11 +5,11 @@ import { useRouter } from "next/navigation";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
 import CardWarrantyForm from "@/components/public/CardWarrantyForm";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 
-const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
-);
+const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+const stripePromise = stripeKey ? loadStripe(stripeKey) : null;
 
 interface BookingPaymentClientProps {
   bookingId: string;
@@ -23,8 +23,16 @@ export default function BookingPaymentClient({
   const router = useRouter();
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [stripeNotConfigured, setStripeNotConfigured] = useState(false);
+  const [skipping, setSkipping] = useState(false);
 
   useEffect(() => {
+    // If no publishable key, Stripe isn't configured on the frontend either
+    if (!stripeKey) {
+      setStripeNotConfigured(true);
+      return;
+    }
+
     async function createSetupIntent() {
       try {
         const res = await fetch("/api/stripe/setup-intent", {
@@ -35,6 +43,11 @@ export default function BookingPaymentClient({
 
         if (!res.ok) {
           const body = await res.json().catch(() => null);
+          if (res.status === 503) {
+            // Stripe not configured on backend
+            setStripeNotConfigured(true);
+            return;
+          }
           setError(body?.error ?? "Failed to initialize payment form.");
           return;
         }
@@ -68,10 +81,59 @@ export default function BookingPaymentClient({
     }
   };
 
+  const handleSkipWarranty = async () => {
+    setSkipping(true);
+    try {
+      // Confirm booking without card warranty
+      await fetch(`/api/bookings/${bookingId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status: "confirmed",
+        }),
+      });
+
+      router.push(`/booking/confirmation?bookingId=${bookingId}`);
+    } catch {
+      setError("Failed to confirm booking. Please contact support.");
+      setSkipping(false);
+    }
+  };
+
+  // Stripe not configured — show info and allow skipping
+  if (stripeNotConfigured) {
+    return (
+      <div className="border border-gold/20 bg-pv-black-80 p-6">
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-gold" />
+          <div>
+            <h3 className="font-serif text-lg font-light text-white">
+              Card warranty unavailable
+            </h3>
+            <p className="mt-2 text-sm text-white/50 font-light">
+              Stripe payment integration is not configured yet. You can still confirm your booking without providing a card warranty.
+            </p>
+            <p className="mt-1 text-xs text-white/30">
+              The hotel may contact you to collect payment details before check-in.
+            </p>
+          </div>
+        </div>
+        <Button
+          size="lg"
+          className="mt-6 w-full"
+          onClick={handleSkipWarranty}
+          loading={skipping}
+        >
+          Confirm booking without card
+        </Button>
+      </div>
+    );
+  }
+
   if (error) {
     return (
       <div className="border border-red-900 bg-red-950 p-6">
-        <p className="text-sm text-red-600">{error}</p>
+        <p className="text-sm text-red-400">{error}</p>
       </div>
     );
   }

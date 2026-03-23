@@ -3,6 +3,14 @@ import { getStripe } from "@/lib/stripe";
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if Stripe is configured before attempting anything
+    if (!process.env.STRIPE_SECRET_KEY) {
+      return NextResponse.json(
+        { error: "Stripe is not configured. Please set STRIPE_SECRET_KEY in your environment variables." },
+        { status: 503 }
+      );
+    }
+
     const stripe = getStripe();
     const { bookingId, guestEmail } = await request.json();
 
@@ -40,8 +48,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ clientSecret: setupIntent.client_secret });
   } catch (error) {
     console.error("Error creating SetupIntent:", error);
+    const message = error instanceof Error ? error.message : "Failed to create SetupIntent";
     return NextResponse.json(
-      { error: "Failed to create SetupIntent" },
+      { error: message },
       { status: 500 }
     );
   }
