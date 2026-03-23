@@ -7,8 +7,7 @@ import RoomSelector from "@/components/public/RoomSelector";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { formatCurrency } from "@/lib/utils";
-import { createClient } from "@/lib/supabase/client";
-import { CalendarDays, Users, Gift } from "lucide-react";
+import { CalendarDays, Users, Gift, User } from "lucide-react";
 import type { Room } from "@/types";
 
 interface BookingSidebarProps {
@@ -29,9 +28,17 @@ export default function BookingSidebar({
   );
   const [nights, setNights] = useState(1);
   const [checkIn, setCheckIn] = useState("");
+  const [checkOut, setCheckOut] = useState("");
   const [guestCount, setGuestCount] = useState(2);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Guest info (no auth required)
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [notes, setNotes] = useState("");
 
   const selectedRoom = useMemo(
     () => rooms.find((r) => r.id === selectedRoomId) ?? null,
@@ -46,18 +53,94 @@ export default function BookingSidebar({
 
   const roomTotal = pricePerNight * nights;
 
-  const checkOutDate = useMemo(() => {
-    if (!checkIn) return "";
-    const d = new Date(checkIn);
-    d.setDate(d.getDate() + nights);
-    return d.toISOString().split("T")[0];
-  }, [checkIn, nights]);
-
   const today = new Date().toISOString().split("T")[0];
 
+  // When check-in changes, auto-set check-out based on nights
+  const handleCheckInChange = (value: string) => {
+    setCheckIn(value);
+    if (value) {
+      const d = new Date(value);
+      d.setDate(d.getDate() + nights);
+      setCheckOut(d.toISOString().split("T")[0]);
+    } else {
+      setCheckOut("");
+    }
+  };
+
+  // When check-out changes, recalculate nights
+  const handleCheckOutChange = (value: string) => {
+    setCheckOut(value);
+    if (checkIn && value) {
+      const ci = new Date(checkIn);
+      const co = new Date(value);
+      const diff = Math.round((co.getTime() - ci.getTime()) / (1000 * 60 * 60 * 24));
+      if (diff >= 1 && diff <= 3) {
+        setNights(diff);
+      } else if (diff < 1) {
+        // Reset to check-in + 1
+        const d = new Date(checkIn);
+        d.setDate(d.getDate() + 1);
+        setCheckOut(d.toISOString().split("T")[0]);
+        setNights(1);
+      } else {
+        // Max 3 nights
+        const d = new Date(checkIn);
+        d.setDate(d.getDate() + 3);
+        setCheckOut(d.toISOString().split("T")[0]);
+        setNights(3);
+      }
+    }
+  };
+
+  // When nights change (from NightSelector), adjust check-out
+  const handleNightsChange = (n: number) => {
+    setNights(n);
+    if (checkIn) {
+      const d = new Date(checkIn);
+      d.setDate(d.getDate() + n);
+      setCheckOut(d.toISOString().split("T")[0]);
+    }
+  };
+
+  // Min check-out = checkIn + 1 day
+  const minCheckOut = useMemo(() => {
+    if (!checkIn) return today;
+    const d = new Date(checkIn);
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split("T")[0];
+  }, [checkIn, today]);
+
+  // Max check-out = checkIn + 3 days
+  const maxCheckOut = useMemo(() => {
+    if (!checkIn) return "";
+    const d = new Date(checkIn);
+    d.setDate(d.getDate() + 3);
+    return d.toISOString().split("T")[0];
+  }, [checkIn]);
+
+  // Format date for display
+  const formatDisplayDate = (dateStr: string) => {
+    if (!dateStr) return "";
+    const d = new Date(dateStr + "T12:00:00");
+    return d.toLocaleDateString("en-GB", {
+      weekday: "short",
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
   const handleBook = async () => {
-    if (!selectedRoomId || !checkIn) {
-      setError("Please select a room and check-in date.");
+    if (!selectedRoomId || !checkIn || !checkOut) {
+      setError("Please select a room and dates.");
+      return;
+    }
+    if (!firstName.trim() || !lastName.trim() || !email.trim()) {
+      setError("Please fill in your name and email.");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError("Please enter a valid email address.");
       return;
     }
 
@@ -65,16 +148,6 @@ export default function BookingSidebar({
     setLoading(true);
 
     try {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        router.push(`/login?redirect=/experiences/${window.location.pathname.split("/").pop()}`);
-        return;
-      }
-
       const res = await fetch("/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -83,14 +156,16 @@ export default function BookingSidebar({
           roomId: selectedRoomId,
           experienceId,
           checkIn,
-          checkOut: checkOutDate,
+          checkOut,
           guestCount,
           roomTotal,
           guest: {
-            email: user.email,
-            firstName: user.user_metadata?.first_name ?? "",
-            lastName: user.user_metadata?.last_name ?? "",
+            email: email.trim(),
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
+            phone: phone.trim() || null,
           },
+          notes: notes.trim() || null,
         }),
       });
 
@@ -114,7 +189,7 @@ export default function BookingSidebar({
       <h3 className="font-serif text-xl font-light text-white">Book this experience</h3>
 
       {error && (
-        <div className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
+        <div className="mt-4 border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
           {error}
         </div>
       )}
@@ -140,30 +215,50 @@ export default function BookingSidebar({
           <NightSelector
             pricePerNight={pricePerNight}
             selected={nights}
-            onChange={setNights}
+            onChange={handleNightsChange}
           />
         </div>
       )}
 
-      {/* Date Input */}
-      <div className="mt-6">
-        <label className="mb-2 flex items-center gap-1.5 text-sm font-medium text-white">
-          <CalendarDays className="h-4 w-4" />
-          Check-in date
-        </label>
-        <Input
-          type="date"
-          value={checkIn}
-          onChange={(e) => setCheckIn(e.target.value)}
-          min={today}
-          required
-        />
-        {checkOutDate && (
-          <p className="mt-1 text-xs text-white/40">
-            Check-out: {checkOutDate}
-          </p>
-        )}
+      {/* Check-in & Check-out Dates */}
+      <div className="mt-6 grid grid-cols-2 gap-3">
+        <div>
+          <label className="mb-2 flex items-center gap-1.5 text-sm font-medium text-white">
+            <CalendarDays className="h-4 w-4" />
+            Check-in
+          </label>
+          <Input
+            type="date"
+            value={checkIn}
+            onChange={(e) => handleCheckInChange(e.target.value)}
+            min={today}
+            required
+          />
+        </div>
+        <div>
+          <label className="mb-2 flex items-center gap-1.5 text-sm font-medium text-white">
+            <CalendarDays className="h-4 w-4" />
+            Check-out
+          </label>
+          <Input
+            type="date"
+            value={checkOut}
+            onChange={(e) => handleCheckOutChange(e.target.value)}
+            min={minCheckOut}
+            max={maxCheckOut}
+            required
+            disabled={!checkIn}
+          />
+        </div>
       </div>
+
+      {/* Stay summary */}
+      {checkIn && checkOut && (
+        <div className="mt-2 space-y-0.5 text-xs text-white/40">
+          <p>{formatDisplayDate(checkIn)} &rarr; {formatDisplayDate(checkOut)}</p>
+          <p className="text-gold/70 font-medium">{nights} {nights === 1 ? "night" : "nights"}</p>
+        </div>
+      )}
 
       {/* Guest Count */}
       <div className="mt-6">
@@ -178,6 +273,57 @@ export default function BookingSidebar({
           min={1}
           max={selectedRoom?.maxGuests ?? 6}
         />
+      </div>
+
+      {/* Guest Information */}
+      <div className="mt-6 border-t border-white/[0.06] pt-6">
+        <label className="mb-4 flex items-center gap-1.5 text-sm font-medium text-white">
+          <User className="h-4 w-4" />
+          Your information
+        </label>
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="First name *"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              placeholder="John"
+              required
+            />
+            <Input
+              label="Last name *"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              placeholder="Doe"
+              required
+            />
+          </div>
+          <Input
+            label="Email *"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="john@example.com"
+            required
+          />
+          <Input
+            label="Phone"
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="+33 6 00 00 00 00"
+          />
+          <div>
+            <label className="text-sm font-light text-white/80">Special requests</label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={2}
+              className="mt-1.5 w-full border border-white/[0.06] bg-pv-black-80 px-3 py-2 text-sm font-light text-white/80 placeholder:text-white/30 focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/30"
+              placeholder="Any special requests..."
+            />
+          </div>
+        </div>
       </div>
 
       {/* Summary */}
@@ -214,7 +360,7 @@ export default function BookingSidebar({
         className="mt-6 w-full"
         loading={loading}
         onClick={handleBook}
-        disabled={!selectedRoomId || !checkIn}
+        disabled={!selectedRoomId || !checkIn || !checkOut || !firstName || !lastName || !email}
       >
         Book Now
       </Button>

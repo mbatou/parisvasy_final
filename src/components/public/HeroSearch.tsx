@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Search, Calendar, Users, Sparkles } from "lucide-react";
@@ -28,11 +28,71 @@ export default function HeroSearch() {
   const router = useRouter();
   const [keyword, setKeyword] = useState("");
   const [checkIn, setCheckIn] = useState("");
+  const [checkOut, setCheckOut] = useState("");
   const [guests, setGuests] = useState("2");
   const [activeChip, setActiveChip] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<Array<{ title: string; category: string; slug: string }>>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const searchRef = useRef<HTMLFormElement>(null);
+
+  const today = new Date().toISOString().split("T")[0];
+
+  // Calculate nights from dates
+  const nights = useMemo(() => {
+    if (!checkIn || !checkOut) return 0;
+    const ci = new Date(checkIn);
+    const co = new Date(checkOut);
+    return Math.max(0, Math.round((co.getTime() - ci.getTime()) / (1000 * 60 * 60 * 24)));
+  }, [checkIn, checkOut]);
+
+  // Min check-out = checkIn + 1 day
+  const minCheckOut = useMemo(() => {
+    if (!checkIn) return today;
+    const d = new Date(checkIn);
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split("T")[0];
+  }, [checkIn, today]);
+
+  // Max check-out = checkIn + 3 days
+  const maxCheckOut = useMemo(() => {
+    if (!checkIn) return "";
+    const d = new Date(checkIn);
+    d.setDate(d.getDate() + 3);
+    return d.toISOString().split("T")[0];
+  }, [checkIn]);
+
+  // When check-in changes, auto-adjust check-out
+  const handleCheckInChange = (value: string) => {
+    setCheckIn(value);
+    if (value) {
+      // If no check-out or check-out is invalid, set to checkIn + 1
+      if (!checkOut) {
+        const d = new Date(value);
+        d.setDate(d.getDate() + 1);
+        setCheckOut(d.toISOString().split("T")[0]);
+      } else {
+        const ci = new Date(value);
+        const co = new Date(checkOut);
+        const diff = Math.round((co.getTime() - ci.getTime()) / (1000 * 60 * 60 * 24));
+        if (diff < 1 || diff > 3) {
+          const d = new Date(value);
+          d.setDate(d.getDate() + 1);
+          setCheckOut(d.toISOString().split("T")[0]);
+        }
+      }
+    }
+  };
+
+  const handleCheckOutChange = (value: string) => {
+    if (checkIn) {
+      const ci = new Date(checkIn);
+      const co = new Date(value);
+      const diff = Math.round((co.getTime() - ci.getTime()) / (1000 * 60 * 60 * 24));
+      if (diff >= 1 && diff <= 3) {
+        setCheckOut(value);
+      }
+    }
+  };
 
   // Close suggestions on outside click
   useEffect(() => {
@@ -73,6 +133,7 @@ export default function HeroSearch() {
     const params = new URLSearchParams();
     if (keyword) params.set("q", keyword);
     if (checkIn) params.set("checkIn", checkIn);
+    if (checkOut) params.set("checkOut", checkOut);
     if (guests && guests !== "2") params.set("guests", guests);
     if (activeChip) {
       if (activeChip === "flash") {
@@ -147,7 +208,7 @@ export default function HeroSearch() {
         {/* Search Form */}
         <form
           onSubmit={handleSubmit}
-          className="relative mx-auto mt-12 max-w-3xl"
+          className="relative mx-auto mt-12 max-w-4xl"
           ref={searchRef}
         >
           <div className="flex flex-col gap-0 bg-pv-black-80 border border-white/[0.08] sm:flex-row sm:items-center transition-colors focus-within:border-gold/30">
@@ -155,10 +216,10 @@ export default function HeroSearch() {
             <div className="flex flex-1 items-center gap-3 px-5 py-4 sm:border-r sm:border-white/[0.06]">
               <Search className="h-4 w-4 shrink-0 text-gold/60" />
               <div className="flex-1">
-                <span className="micro-label text-gold/60 block mb-1">Search</span>
+                <span className="micro-label text-gold/60 block mb-1">Experience</span>
                 <input
                   type="text"
-                  placeholder="Experiences, locations..."
+                  placeholder="Seine cruise..."
                   value={keyword}
                   onChange={(e) => setKeyword(e.target.value)}
                   onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
@@ -175,9 +236,26 @@ export default function HeroSearch() {
                 <input
                   type="date"
                   value={checkIn}
-                  onChange={(e) => setCheckIn(e.target.value)}
+                  onChange={(e) => handleCheckInChange(e.target.value)}
                   className="w-full bg-transparent text-sm text-white focus:outline-none font-light [color-scheme:dark]"
-                  min={new Date().toISOString().split("T")[0]}
+                  min={today}
+                />
+              </div>
+            </div>
+
+            {/* Check-out Date */}
+            <div className="flex items-center gap-3 px-5 py-4 sm:border-r sm:border-white/[0.06]">
+              <Calendar className="h-4 w-4 shrink-0 text-gold/60" />
+              <div>
+                <span className="micro-label text-gold/60 block mb-1">Check-out</span>
+                <input
+                  type="date"
+                  value={checkOut}
+                  onChange={(e) => handleCheckOutChange(e.target.value)}
+                  className="w-full bg-transparent text-sm text-white focus:outline-none font-light [color-scheme:dark]"
+                  min={minCheckOut}
+                  max={maxCheckOut}
+                  disabled={!checkIn}
                 />
               </div>
             </div>
@@ -210,6 +288,13 @@ export default function HeroSearch() {
               Search
             </button>
           </div>
+
+          {/* Nights indicator */}
+          {nights > 0 && (
+            <p className="mt-2 text-xs text-gold/60 font-light">
+              {nights} {nights === 1 ? "night" : "nights"}
+            </p>
+          )}
 
           {/* Autocomplete dropdown */}
           {showSuggestions && suggestions.length > 0 && (

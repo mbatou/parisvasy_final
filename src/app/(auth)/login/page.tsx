@@ -63,10 +63,10 @@ function LoginForm() {
   return (
     <div>
       <h2 className="text-center font-serif text-2xl text-white font-light">
-        Welcome back
+        Back-office login
       </h2>
       <p className="mt-2 text-center text-sm text-white/40 font-light">
-        Sign in to your account
+        Staff access only
       </p>
 
       {error && (

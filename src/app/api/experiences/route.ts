@@ -9,6 +9,8 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get("category");
     const isFlash = searchParams.get("isFlash");
     const search = searchParams.get("search");
+    const checkIn = searchParams.get("checkIn");
+    const checkOut = searchParams.get("checkOut");
 
     let query = supabase
       .from("Experience")
@@ -22,6 +24,14 @@ export async function GET(request: NextRequest) {
     if (search) {
       query = query.or(
         `title.ilike.%${search}%,description.ilike.%${search}%,location.ilike.%${search}%`
+      );
+    }
+
+    // Filter by availability window — experiences must cover the entire stay
+    // Experiences with null availableFrom/availableTo are always available
+    if (checkIn && checkOut) {
+      query = query.or(
+        `and(availableFrom.is.null,availableTo.is.null),and(availableFrom.lte.${new Date(checkIn).toISOString()},availableTo.gte.${new Date(checkOut).toISOString()})`
       );
     }
 
@@ -67,6 +77,8 @@ export async function POST(request: NextRequest) {
       inclusions,
       images,
       coverImage,
+      availableFrom,
+      availableTo,
       isFlash,
       flashStart,
       flashEnd,
@@ -106,6 +118,8 @@ export async function POST(request: NextRequest) {
         inclusions: inclusions ?? [],
         images: images ?? [],
         coverImage,
+        availableFrom: availableFrom ? new Date(availableFrom).toISOString() : null,
+        availableTo: availableTo ? new Date(availableTo).toISOString() : null,
         isFlash: isFlash ?? false,
         flashStart: flashStart ? new Date(flashStart).toISOString() : null,
         flashEnd: flashEnd ? new Date(flashEnd).toISOString() : null,

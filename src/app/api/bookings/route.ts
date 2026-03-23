@@ -47,6 +47,7 @@ export async function POST(request: NextRequest) {
       guestCount,
       roomTotal,
       guest,
+      notes,
     } = body;
 
     // Generate booking reference: PVS-{year}-{4digits}
@@ -140,6 +141,7 @@ export async function POST(request: NextRequest) {
         guestCount: guestCount ?? 2,
         roomTotal,
         status: "pending",
+        notes: notes ?? null,
         updatedAt: new Date().toISOString(),
       })
       .select("*, room:Room(*), experience:Experience(*), guest:Guest(*), hotel:Hotel(*)")

@@ -207,16 +207,24 @@ export default async function BookingDetailPage({
                 <p className="font-medium text-white">
                   {formatDate(booking.checkIn)}
                 </p>
+                <p className="text-[10px] text-white/30">
+                  {new Date(booking.checkIn).toLocaleDateString("en-GB", { weekday: "long" })}
+                </p>
               </div>
               <div>
                 <p className="text-xs text-white/40">Check-out</p>
                 <p className="font-medium text-white">
                   {formatDate(booking.checkOut)}
                 </p>
+                <p className="text-[10px] text-white/30">
+                  {new Date(booking.checkOut).toLocaleDateString("en-GB", { weekday: "long" })}
+                </p>
               </div>
               <div>
-                <p className="text-xs text-white/40">Nights</p>
-                <p className="font-medium text-white">{booking.nights}</p>
+                <p className="text-xs text-white/40">Stay</p>
+                <p className="font-medium text-white">
+                  {booking.nights} {booking.nights === 1 ? "night" : "nights"}
+                </p>
               </div>
               <div>
                 <p className="text-xs text-white/40">Guests</p>

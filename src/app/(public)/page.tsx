@@ -18,10 +18,13 @@ export default async function HomePage() {
   try {
     const supabase = createAdminClient();
 
+    const now = new Date().toISOString();
+
     const { data: experiences, error } = await supabase
       .from('Experience')
       .select('*, hotel:Hotel(*, rooms:Room(*))')
       .eq('isActive', true)
+      .or(`and(availableFrom.is.null,availableTo.is.null),and(availableFrom.lte.${now},availableTo.gte.${now})`)
       .order('createdAt', { ascending: false })
       .limit(9);
 

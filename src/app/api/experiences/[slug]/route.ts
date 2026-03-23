@@ -48,9 +48,18 @@ export async function PATCH(
     const { slug } = await params;
     const body = await request.json();
 
+    // Remove the form-only field before persisting
+    const { hasAvailabilityDates, ...rest } = body;
+
     const updateData = {
-      ...body,
+      ...rest,
       updatedAt: new Date().toISOString(),
+      // Availability: if hasAvailabilityDates is explicitly false, clear them
+      ...(hasAvailabilityDates === false
+        ? { availableFrom: null, availableTo: null }
+        : {}),
+      ...(body.availableFrom ? { availableFrom: new Date(body.availableFrom).toISOString() } : {}),
+      ...(body.availableTo ? { availableTo: new Date(body.availableTo).toISOString() } : {}),
       ...(body.flashStart ? { flashStart: new Date(body.flashStart).toISOString() } : {}),
       ...(body.flashEnd ? { flashEnd: new Date(body.flashEnd).toISOString() } : {}),
     };
