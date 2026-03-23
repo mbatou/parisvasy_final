@@ -1,11 +1,10 @@
 export const dynamic = "force-dynamic";
 
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { Sidebar } from "@/components/admin/Sidebar";
-import { TopBar } from "@/components/admin/TopBar";
+import { AdminShell } from "@/components/admin/AdminShell";
 import type { UserRole } from "@/types";
 
 export default async function AdminLayout({
@@ -73,10 +72,10 @@ export default async function AdminLayout({
   }
 
   const role = assignments[0].role as UserRole;
-  const currentHotelId = assignments[0].hotelId;
+  const assignedHotelId = assignments[0].hotelId;
 
-  // For super_admin, get all hotels
-  let hotels = assignments.map((a) => a.hotel);
+  // For super_admin, get all hotels and read selected hotel from cookie
+  let hotels = assignments.map((a) => a.hotel).filter(Boolean);
   if (role === "super_admin") {
     try {
       const db = createAdminClient();
@@ -91,9 +90,12 @@ export default async function AdminLayout({
     }
   }
 
-  // Resolve current path from headers
-  const headerList = await headers();
-  const currentPath = headerList.get("x-pathname") ?? "/admin";
+  // Determine current hotel context
+  const cookieStore = await cookies();
+  const savedHotelId = cookieStore.get("pv_selected_hotel")?.value;
+  const currentHotelId = role === "super_admin"
+    ? (savedHotelId && savedHotelId !== "all" ? savedHotelId : "all")
+    : assignedHotelId;
 
   // Guest record for display name (fallback to email)
   let guest: { firstName: string; lastName: string } | null = null;
@@ -112,27 +114,19 @@ export default async function AdminLayout({
   }
 
   const topBarUser = {
-    firstName: guest?.firstName ?? user.email?.split("@")[0] ?? "Admin",
-    lastName: guest?.lastName ?? "",
+    firstName: guest?.firstName ?? user.user_metadata?.first_name ?? user.email?.split("@")[0] ?? "Admin",
+    lastName: guest?.lastName ?? user.user_metadata?.last_name ?? "",
     email: user.email ?? "",
   };
 
   return (
-    <div className="min-h-screen bg-pv-black-90">
-      <Sidebar
-        userRole={role}
-        currentHotelId={currentHotelId}
-        hotels={hotels}
-        currentPath={currentPath}
-      />
-      <div className="lg:ml-64">
-        <TopBar
-          user={topBarUser}
-          role={role}
-          breadcrumbs={[{ label: "Admin", href: "/admin" }]}
-        />
-        <main className="p-6">{children}</main>
-      </div>
-    </div>
+    <AdminShell
+      userRole={role}
+      currentHotelId={currentHotelId}
+      hotels={hotels}
+      topBarUser={topBarUser}
+    >
+      {children}
+    </AdminShell>
   );
 }

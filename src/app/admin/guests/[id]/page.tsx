@@ -17,6 +17,7 @@ import {
   TableCell,
 } from "@/components/ui/Table";
 import { Mail, Phone, Globe, CreditCard } from "lucide-react";
+import { GuestEditClient } from "./GuestEditClient";
 
 export default async function GuestDetailPage({
   params,
@@ -119,6 +120,14 @@ export default async function GuestDetailPage({
             <p className="mt-4 text-xs text-white/30">
               Guest since {formatDate(guestWithBookings.createdAt)}
             </p>
+          </div>
+
+          {/* Edit form */}
+          <div className="border border-white/[0.06] bg-pv-black-80 p-6">
+            <h2 className="mb-4 text-lg font-light text-white font-serif">
+              Edit Guest
+            </h2>
+            <GuestEditClient guest={JSON.parse(JSON.stringify(guestWithBookings))} />
           </div>
 
           {/* Summary stats */}

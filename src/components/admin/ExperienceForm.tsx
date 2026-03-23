@@ -5,9 +5,10 @@ import { z } from "zod";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
+import { ImageUploader } from "@/components/admin/ImageUploader";
 import { slugify } from "@/lib/utils";
 import { X } from "lucide-react";
-import type { Experience, ExperienceCategory } from "@/types";
+import type { Experience, ExperienceCategory, UserRole } from "@/types";
 import { CATEGORY_LABELS } from "@/types";
 
 const experienceSchema = z.object({
@@ -32,14 +33,29 @@ const experienceSchema = z.object({
   isActive: z.boolean(),
 });
 
-type ExperienceFormData = z.infer<typeof experienceSchema>;
+type ExperienceFormData = z.infer<typeof experienceSchema> & {
+  images: string[];
+  coverImage: string;
+  hotelId?: string;
+};
 
 interface ExperienceFormProps {
   experience?: Experience;
   onSubmit: (data: ExperienceFormData) => void;
+  onDelete?: () => void;
+  userRole?: UserRole;
+  assignedHotelId?: string;
+  hotels?: { id: string; name: string }[];
 }
 
-export function ExperienceForm({ experience, onSubmit }: ExperienceFormProps) {
+export function ExperienceForm({
+  experience,
+  onSubmit,
+  onDelete,
+  userRole,
+  assignedHotelId,
+  hotels,
+}: ExperienceFormProps) {
   const [title, setTitle] = useState(experience?.title ?? "");
   const [slug, setSlug] = useState(experience?.slug ?? "");
   const [category, setCategory] = useState<ExperienceCategory>(
@@ -55,6 +71,8 @@ export function ExperienceForm({ experience, onSubmit }: ExperienceFormProps) {
     experience?.inclusions ?? []
   );
   const [inclusionInput, setInclusionInput] = useState("");
+  const [images, setImages] = useState<string[]>(experience?.images ?? []);
+  const [coverImage, setCoverImage] = useState(experience?.coverImage ?? "");
   const [isFlash, setIsFlash] = useState(experience?.isFlash ?? false);
   const [flashStart, setFlashStart] = useState(
     experience?.flashStart
@@ -67,8 +85,10 @@ export function ExperienceForm({ experience, onSubmit }: ExperienceFormProps) {
       : ""
   );
   const [isActive, setIsActive] = useState(experience?.isActive ?? true);
+  const [hotelId, setHotelId] = useState(experience?.hotelId ?? assignedHotelId ?? "");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     if (!experience) {
@@ -92,7 +112,7 @@ export function ExperienceForm({ experience, onSubmit }: ExperienceFormProps) {
     e.preventDefault();
     setErrors({});
 
-    const data: ExperienceFormData = {
+    const data = {
       title,
       slug,
       category,
@@ -118,12 +138,44 @@ export function ExperienceForm({ experience, onSubmit }: ExperienceFormProps) {
       return;
     }
 
+    if (!hotelId && userRole === "super_admin") {
+      setErrors({ hotelId: "Please select a hotel" });
+      return;
+    }
+
     setSubmitting(true);
-    onSubmit(result.data);
+    onSubmit({ ...result.data, images, coverImage, hotelId });
   };
+
+  const selectedHotelName = hotels?.find((h) => h.id === hotelId)?.name;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Hotel assignment */}
+      {userRole === "super_admin" && hotels && hotels.length > 0 && (
+        <Select
+          label="Hotel"
+          value={hotelId}
+          onChange={(e) => setHotelId(e.target.value)}
+          error={errors.hotelId}
+        >
+          <option value="">Select a hotel...</option>
+          {hotels.map((h) => (
+            <option key={h.id} value={h.id}>
+              {h.name}
+            </option>
+          ))}
+        </Select>
+      )}
+      {userRole === "hotel_manager" && selectedHotelName && (
+        <div>
+          <label className="text-sm font-light text-white/80">Hotel</label>
+          <p className="mt-1.5 rounded border border-white/[0.06] bg-pv-black-80 px-3 py-2.5 text-sm font-light text-white/60">
+            {selectedHotelName}
+          </p>
+        </div>
+      )}
+
       <div className="grid gap-4 md:grid-cols-2">
         <Input
           label="Title"
@@ -235,11 +287,19 @@ export function ExperienceForm({ experience, onSubmit }: ExperienceFormProps) {
         )}
       </div>
 
-      {/* Image upload placeholder */}
+      {/* Image uploads */}
       <div>
-        <label className="text-sm font-light text-white/80">Images</label>
-        <div className="mt-1.5 flex h-32 items-center justify-center rounded border-2 border-dashed border-white/[0.06] bg-pv-black-90 text-sm font-light text-white/40">
-          Image uploader placeholder
+        <label className="text-sm font-light text-white/80">Cover Image & Gallery</label>
+        <div className="mt-1.5">
+          <ImageUploader
+            bucket="experience-images"
+            entityId={experience?.id ?? "new"}
+            existingImages={images}
+            coverImage={coverImage}
+            onImagesChange={setImages}
+            onCoverChange={setCoverImage}
+            maxImages={10}
+          />
         </div>
       </div>
 
@@ -283,10 +343,35 @@ export function ExperienceForm({ experience, onSubmit }: ExperienceFormProps) {
         <span className="text-sm font-light text-white/80">Active</span>
       </label>
 
-      <div className="flex justify-end">
-        <Button type="submit" loading={submitting}>
-          {experience ? "Update Experience" : "Create Experience"}
-        </Button>
+      <div className="flex items-center justify-between">
+        {experience && onDelete && (
+          <div>
+            {!confirmDelete ? (
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => setConfirmDelete(true)}
+              >
+                Delete Experience
+              </Button>
+            ) : (
+              <div className="flex items-center gap-2 rounded border border-red-500/30 bg-red-900/30 px-4 py-2">
+                <span className="text-sm font-light text-red-400">Are you sure?</span>
+                <Button type="button" variant="destructive" size="sm" onClick={onDelete}>
+                  Yes, delete
+                </Button>
+                <Button type="button" variant="ghost" size="sm" onClick={() => setConfirmDelete(false)}>
+                  No
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+        <div className="ml-auto">
+          <Button type="submit" loading={submitting}>
+            {experience ? "Update Experience" : "Create Experience"}
+          </Button>
+        </div>
       </div>
     </form>
   );

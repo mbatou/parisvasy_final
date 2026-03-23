@@ -3,17 +3,12 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getUserStaffAssignments } from "@/lib/auth";
+import { getEffectiveHotelId } from "@/lib/hotel-context";
 import { formatCurrency } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { Plus, BedDouble, Users, Maximize2 } from "lucide-react";
 
-export default async function RoomsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ hotel?: string }>;
-}) {
-  const params = await searchParams;
+export default async function RoomsPage() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -21,17 +16,21 @@ export default async function RoomsPage({
 
   if (!user) return null;
 
-  const assignments = await getUserStaffAssignments(user.id);
-  if (assignments.length === 0) return null;
-
-  const hotelId = params.hotel ?? assignments[0].hotelId;
+  let ctx;
+  try {
+    ctx = await getEffectiveHotelId(user.id);
+  } catch {
+    return null;
+  }
+  const { hotelId } = ctx;
 
   const db = createAdminClient();
-  const { data: roomsData } = await db
+  let roomQuery = db
     .from('Room')
     .select('*')
-    .eq('hotelId', hotelId)
     .order('name', { ascending: true });
+  if (hotelId) roomQuery = roomQuery.eq('hotelId', hotelId);
+  const { data: roomsData } = await roomQuery;
 
   const roomsList = roomsData ?? [];
 

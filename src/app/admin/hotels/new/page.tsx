@@ -6,7 +6,8 @@ import { HotelForm } from "@/components/admin/HotelForm";
 export default function NewHotelPage() {
   const router = useRouter();
 
-  const handleSubmit = async (data: Record<string, unknown>) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleSubmit = async (data: any) => {
     const res = await fetch("/api/hotels", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

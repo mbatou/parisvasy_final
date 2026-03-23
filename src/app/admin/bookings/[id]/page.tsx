@@ -42,6 +42,16 @@ export default async function BookingDetailPage({
 
   const role = assignments[0].role as UserRole;
 
+  // Fetch rooms for the hotel (for room change dropdown)
+  const { data: roomsData } = await db
+    .from('Room')
+    .select('id, name, type')
+    .eq('hotelId', booking.hotelId)
+    .eq('isActive', true)
+    .order('name', { ascending: true });
+
+  const rooms = roomsData ?? [];
+
   // Timeline steps
   const timelineSteps = [
     {
@@ -307,6 +317,7 @@ export default async function BookingDetailPage({
             <BookingDetailClient
               booking={JSON.parse(JSON.stringify(booking))}
               userRole={role}
+              rooms={rooms}
             />
           </div>
 

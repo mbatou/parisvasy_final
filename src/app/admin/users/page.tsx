@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserStaffAssignments } from "@/lib/auth";
 import type { UserRole } from "@/types";
 import { UsersPageClient } from "./UsersPageClient";
+import { UserPlus } from "lucide-react";
 
 export default async function UsersPage() {
   const supabase = await createClient();
@@ -20,7 +21,6 @@ export default async function UsersPage() {
 
   const role = assignments[0].role as UserRole;
 
-  // Only super_admin can access this page
   if (role !== "super_admin") {
     return (
       <div className="flex flex-col items-center justify-center py-16">
@@ -50,8 +50,7 @@ export default async function UsersPage() {
 
   const staffAssignments = staffAssignmentsData ?? [];
 
-  // Enrich with guest data where possible (for display names)
-  // First, get all unique userIds
+  // Get all unique userIds
   const userIds = [...new Set(staffAssignments.map((sa) => sa.userId))];
 
   // Batch fetch all guests by authUserId
@@ -92,9 +91,10 @@ export default async function UsersPage() {
         </div>
         <Link
           href="/admin/users/new"
-          className="inline-flex items-center gap-2 rounded-lg bg-gold text-pv-black px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-gold/80"
+          className="inline-flex items-center gap-2 bg-gold text-pv-black px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-gold-light"
         >
-          Invite Staff
+          <UserPlus className="h-4 w-4" />
+          Add Staff Member
         </Link>
       </div>
 

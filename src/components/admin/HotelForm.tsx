@@ -3,25 +3,32 @@
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { ImageUploader } from "@/components/admin/ImageUploader";
 import { slugify } from "@/lib/utils";
 import type { Hotel } from "@/types";
 
-interface HotelFormProps {
-  hotel?: Hotel;
-  onSubmit: (data: {
-    name: string;
-    slug: string;
-    address: string;
-    city: string;
-    country: string;
-    stars: number;
-    description: string;
-    phone: string;
-    email: string;
-  }) => void;
+interface HotelFormData {
+  name: string;
+  slug: string;
+  address: string;
+  city: string;
+  country: string;
+  stars: number;
+  description: string;
+  phone: string;
+  email: string;
+  coverImage: string;
+  images: string[];
+  isActive: boolean;
 }
 
-export function HotelForm({ hotel, onSubmit }: HotelFormProps) {
+interface HotelFormProps {
+  hotel?: Hotel;
+  onSubmit: (data: HotelFormData) => void;
+  onDelete?: () => void;
+}
+
+export function HotelForm({ hotel, onSubmit, onDelete }: HotelFormProps) {
   const [name, setName] = useState(hotel?.name ?? "");
   const [slug, setSlug] = useState(hotel?.slug ?? "");
   const [address, setAddress] = useState(hotel?.address ?? "");
@@ -31,8 +38,12 @@ export function HotelForm({ hotel, onSubmit }: HotelFormProps) {
   const [description, setDescription] = useState(hotel?.description ?? "");
   const [phone, setPhone] = useState(hotel?.phone ?? "");
   const [email, setEmail] = useState(hotel?.email ?? "");
+  const [coverImage, setCoverImage] = useState(hotel?.coverImage ?? "");
+  const [images, setImages] = useState<string[]>(hotel?.images ?? []);
+  const [isActive, setIsActive] = useState(hotel?.isActive ?? true);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     if (!hotel) {
@@ -58,7 +69,7 @@ export function HotelForm({ hotel, onSubmit }: HotelFormProps) {
 
     setErrors({});
     setSubmitting(true);
-    onSubmit({ name, slug, address, city, country, stars, description, phone, email });
+    onSubmit({ name, slug, address, city, country, stars, description, phone, email, coverImage, images, isActive });
   };
 
   return (
@@ -142,26 +153,74 @@ export function HotelForm({ hotel, onSubmit }: HotelFormProps) {
         />
       </div>
 
-      {/* Cover image placeholder */}
+      {/* Cover Image & Gallery */}
       <div>
-        <label className="text-sm font-light text-white/80">Cover Image</label>
-        <div className="mt-1.5 flex h-40 items-center justify-center rounded border-2 border-dashed border-white/[0.06] bg-pv-black-90 text-sm font-light text-white/40">
-          Cover image upload placeholder
+        <label className="text-sm font-light text-white/80">Cover Image & Gallery</label>
+        <div className="mt-1.5">
+          <ImageUploader
+            bucket="hotel-images"
+            entityId={hotel?.id ?? "new"}
+            existingImages={images}
+            coverImage={coverImage}
+            onImagesChange={setImages}
+            onCoverChange={setCoverImage}
+            maxImages={10}
+          />
         </div>
       </div>
 
-      {/* Gallery placeholder */}
-      <div>
-        <label className="text-sm font-light text-white/80">Gallery</label>
-        <div className="mt-1.5 flex h-32 items-center justify-center rounded border-2 border-dashed border-white/[0.06] bg-pv-black-90 text-sm font-light text-white/40">
-          Gallery upload placeholder
-        </div>
-      </div>
+      {/* Active toggle */}
+      <label className="flex items-center gap-3">
+        <input
+          type="checkbox"
+          checked={isActive}
+          onChange={(e) => setIsActive(e.target.checked)}
+          className="h-4 w-4 rounded border-white/[0.06] text-gold focus:ring-gold/30"
+        />
+        <span className="text-sm font-light text-white/80">Active</span>
+      </label>
 
-      <div className="flex justify-end">
-        <Button type="submit" loading={submitting}>
-          {hotel ? "Update Hotel" : "Create Hotel"}
-        </Button>
+      <div className="flex items-center justify-between">
+        {hotel && onDelete && (
+          <div>
+            {!confirmDelete ? (
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => setConfirmDelete(true)}
+              >
+                Delete Hotel
+              </Button>
+            ) : (
+              <div className="flex items-center gap-2 rounded border border-red-500/30 bg-red-900/30 px-4 py-2">
+                <span className="text-sm font-light text-red-400">
+                  This will delete all related data. Are you sure?
+                </span>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  onClick={onDelete}
+                >
+                  Yes, delete
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setConfirmDelete(false)}
+                >
+                  No
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+        <div className="ml-auto">
+          <Button type="submit" loading={submitting}>
+            {hotel ? "Update Hotel" : "Create Hotel"}
+          </Button>
+        </div>
       </div>
     </form>
   );
