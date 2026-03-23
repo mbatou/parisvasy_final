@@ -22,6 +22,8 @@ export default function BookingPaymentClient({
     cardHolder: string;
   }) => {
     try {
+      setError(null);
+
       // Extract last 4 digits and card brand
       const last4 = cardData.cardNumber.slice(-4);
       const brand = detectBrand(cardData.cardNumber);
@@ -41,8 +43,22 @@ export default function BookingPaymentClient({
       });
 
       if (!res.ok) {
-        setError("Failed to confirm booking. Please try again.");
-        return;
+        // Retry without optional new columns if they don't exist yet
+        const retry = await fetch(`/api/bookings/${bookingId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            status: "confirmed",
+            cardLast4: last4,
+            cardBrand: brand,
+            warrantyCollected: true,
+          }),
+        });
+
+        if (!retry.ok) {
+          setError("Failed to confirm booking. Please try again.");
+          return;
+        }
       }
 
       router.push(`/booking/confirmation?bookingId=${bookingId}`);
@@ -51,17 +67,16 @@ export default function BookingPaymentClient({
     }
   };
 
-  if (error) {
-    return (
-      <div className="border border-red-900 bg-red-950 p-6">
-        <p className="text-sm text-red-400">{error}</p>
-      </div>
-    );
-  }
-
   return (
     <div className="border border-white/[0.06] bg-pv-black-80 p-6">
       <h3 className="mb-6 font-serif text-xl font-light text-white">Card warranty</h3>
+
+      {error && (
+        <div className="mb-4 border border-red-900 bg-red-950 p-4">
+          <p className="text-sm text-red-400">{error}</p>
+        </div>
+      )}
+
       <CardWarrantyForm
         onSuccess={handleSuccess}
         bookingId={bookingId}
