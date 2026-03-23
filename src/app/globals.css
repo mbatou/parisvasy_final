@@ -83,6 +83,20 @@
   .card-dark:hover {
     @apply border-gold/20 -translate-y-[3px];
   }
+
+  /* Legal page list styling — gold square bullets */
+  .legal-list li::before {
+    content: "";
+    position: absolute;
+    left: -16px;
+    top: 12px;
+    width: 4px;
+    height: 4px;
+    background: #C6A55C;
+  }
+  .legal-list {
+    list-style: none;
+  }
 }
 
 @layer utilities {

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { CustomCursor } from "@/components/public/CustomCursor";
+import CookieConsent from "@/components/public/CookieConsent";
 
 export const metadata: Metadata = {
   title: "PARISVASY — Book a room, live an experience",
@@ -18,6 +19,7 @@ export default function RootLayout({
       <body>
         <CustomCursor />
         {children}
+        <CookieConsent />
       </body>
     </html>
   );

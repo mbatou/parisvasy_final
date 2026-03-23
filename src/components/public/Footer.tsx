@@ -105,6 +105,12 @@ export default function Footer() {
         <div className="mt-16 border-t border-white/[0.06] pt-8 text-center">
           <p className="text-[11px] text-white/20 tracking-wide">
             &copy; {year} PARISVASY. All rights reserved.
+            {" · "}
+            <Link href="/terms" className="transition-colors hover:text-gold">Terms</Link>
+            {" · "}
+            <Link href="/privacy" className="transition-colors hover:text-gold">Privacy</Link>
+            {" · "}
+            <Link href="/cookies" className="transition-colors hover:text-gold">Cookies</Link>
           </p>
         </div>
       </div>
