@@ -8,17 +8,16 @@ import { cn } from "@/lib/utils";
 import {
   Menu,
   X,
-  LogIn,
-  UserPlus,
   LogOut,
-  User,
   LayoutDashboard,
 } from "lucide-react";
 import type { UserRole } from "@/types";
 
 const NAV_LINKS = [
   { href: "/experiences", label: "Experiences" },
-  { href: "/#how-it-works", label: "How it works" },
+  { href: "/how-it-works", label: "How it works" },
+  { href: "/about", label: "About" },
+  { href: "/contact", label: "Contact" },
 ];
 
 const STAFF_ROLES: UserRole[] = [
@@ -31,13 +30,13 @@ const STAFF_ROLES: UserRole[] = [
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
+  const [user, setUser] = useState<{ id: string; email?: string; username?: string } | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const router = useRouter();
   const supabase = createClient();
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 10);
+    const handleScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -48,7 +47,7 @@ export default function Navbar() {
         data: { user: authUser },
       } = await supabase.auth.getUser();
       if (authUser) {
-        setUser({ id: authUser.id, email: authUser.email });
+        setUser({ id: authUser.id, email: authUser.email, username: authUser.user_metadata?.username as string });
         const role = (authUser.user_metadata?.role as UserRole) ?? "customer";
         setUserRole(role);
       }
@@ -59,7 +58,7 @@ export default function Navbar() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
-        setUser({ id: session.user.id, email: session.user.email });
+        setUser({ id: session.user.id, email: session.user.email, username: session.user.user_metadata?.username as string });
         const role =
           (session.user.user_metadata?.role as UserRole) ?? "customer";
         setUserRole(role);
@@ -85,13 +84,18 @@ export default function Navbar() {
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 w-full bg-white transition-shadow duration-300",
-        scrolled && "shadow-md"
+        "fixed top-0 z-50 w-full transition-all duration-500",
+        scrolled
+          ? "bg-[rgba(10,10,10,0.92)] backdrop-blur-[24px] border-b border-white/[0.06]"
+          : "bg-transparent"
       )}
     >
-      <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+      <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
         {/* Logo */}
-        <Link href="/" className="font-serif text-2xl text-vermillion">
+        <Link
+          href="/"
+          className="font-sans text-[15px] font-semibold tracking-[4px] text-gold"
+        >
           PARISVASY
         </Link>
 
@@ -101,7 +105,7 @@ export default function Navbar() {
             <li key={link.href}>
               <Link
                 href={link.href}
-                className="text-sm font-medium text-ink-400 transition-colors hover:text-vermillion"
+                className="micro-label text-white/60 transition-colors hover:text-gold link-underline"
               >
                 {link.label}
               </Link>
@@ -110,49 +114,32 @@ export default function Navbar() {
         </ul>
 
         {/* Desktop Right Side */}
-        <div className="hidden items-center gap-3 md:flex">
-          {isStaff && (
-            <Link
-              href="/back-office"
-              className="flex items-center gap-1.5 rounded-lg border border-navy-100 px-3 py-1.5 text-sm font-medium text-navy transition-colors hover:bg-navy-50"
-            >
-              <LayoutDashboard className="h-4 w-4" />
-              Back-office
-            </Link>
-          )}
-          {user ? (
-            <div className="flex items-center gap-3">
+        <div className="hidden items-center gap-4 md:flex">
+          {/* Book Now CTA — always visible */}
+          <Link
+            href="/experiences"
+            className="micro-label bg-gold px-5 py-2 text-pv-black font-medium transition-colors hover:bg-gold-light"
+          >
+            Book now
+          </Link>
+
+          {/* Staff: Back office + logout */}
+          {isStaff && user && (
+            <>
               <Link
-                href="/account"
-                className="flex items-center gap-1.5 text-sm font-medium text-ink-400 transition-colors hover:text-vermillion"
+                href="/admin"
+                className="micro-label flex items-center gap-1.5 border border-gold/25 px-4 py-2 text-gold transition-all hover:bg-gold hover:text-pv-black"
               >
-                <User className="h-4 w-4" />
-                {user.email?.split("@")[0] ?? "Account"}
+                <LayoutDashboard className="h-3.5 w-3.5" />
+                Back office
               </Link>
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-ink-300 transition-colors hover:text-vermillion"
+                className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-white/40 transition-colors hover:text-gold"
               >
-                <LogOut className="h-4 w-4" />
+                <LogOut className="h-3.5 w-3.5" />
                 Logout
               </button>
-            </div>
-          ) : (
-            <>
-              <Link
-                href="/login"
-                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-ink-400 transition-colors hover:text-vermillion"
-              >
-                <LogIn className="h-4 w-4" />
-                Login
-              </Link>
-              <Link
-                href="/register"
-                className="flex items-center gap-1.5 rounded-lg bg-vermillion px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-vermillion-600"
-              >
-                <UserPlus className="h-4 w-4" />
-                Register
-              </Link>
             </>
           )}
         </div>
@@ -164,81 +151,61 @@ export default function Navbar() {
           aria-label="Toggle menu"
         >
           {mobileOpen ? (
-            <X className="h-6 w-6 text-ink" />
+            <X className="h-6 w-6 text-white" />
           ) : (
-            <Menu className="h-6 w-6 text-ink" />
+            <Menu className="h-6 w-6 text-white" />
           )}
         </button>
       </nav>
 
       {/* Mobile Menu */}
       {mobileOpen && (
-        <div className="border-t border-cream-200 bg-white px-4 pb-4 md:hidden">
-          <ul className="flex flex-col gap-2 py-3">
+        <div className="border-t border-white/[0.06] bg-pv-black-90 px-4 pb-6 md:hidden">
+          <ul className="flex flex-col gap-1 py-4">
             {NAV_LINKS.map((link) => (
               <li key={link.href}>
                 <Link
                   href={link.href}
                   onClick={() => setMobileOpen(false)}
-                  className="block rounded-lg px-3 py-2 text-sm font-medium text-ink-400 transition-colors hover:bg-cream"
+                  className="block px-3 py-2.5 text-[11px] uppercase tracking-wide text-white/60 transition-colors hover:text-gold"
                 >
                   {link.label}
                 </Link>
               </li>
             ))}
+            <li>
+              <Link
+                href="/experiences"
+                onClick={() => setMobileOpen(false)}
+                className="block px-3 py-2.5 text-[11px] uppercase tracking-wide text-gold font-medium transition-colors hover:text-gold-light"
+              >
+                Book now
+              </Link>
+            </li>
             {isStaff && (
               <li>
                 <Link
-                  href="/back-office"
+                  href="/admin"
                   onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-navy transition-colors hover:bg-cream"
+                  className="flex items-center gap-2 px-3 py-2.5 text-[11px] uppercase tracking-wide text-gold transition-colors hover:text-gold-light"
                 >
-                  <LayoutDashboard className="h-4 w-4" />
-                  Back-office
+                  <LayoutDashboard className="h-3.5 w-3.5" />
+                  Back office
                 </Link>
               </li>
             )}
           </ul>
-          <div className="flex flex-col gap-2 border-t border-cream-200 pt-3">
-            {user ? (
-              <>
-                <Link
-                  href="/account"
-                  onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-ink-400 hover:bg-cream"
-                >
-                  <User className="h-4 w-4" />
-                  {user.email?.split("@")[0] ?? "Account"}
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-ink-300 hover:bg-cream"
-                >
-                  <LogOut className="h-4 w-4" />
-                  Logout
-                </button>
-              </>
-            ) : (
-              <>
-                <Link
-                  href="/login"
-                  onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-ink-400 hover:bg-cream"
-                >
-                  <LogIn className="h-4 w-4" />
-                  Login
-                </Link>
-                <Link
-                  href="/register"
-                  onClick={() => setMobileOpen(false)}
-                  className="flex items-center justify-center gap-1.5 rounded-lg bg-vermillion px-4 py-2 text-sm font-medium text-white hover:bg-vermillion-600"
-                >
-                  <UserPlus className="h-4 w-4" />
-                  Register
-                </Link>
-              </>
-            )}
-          </div>
+          {isStaff && user && (
+            <div className="flex flex-col gap-2 border-t border-white/[0.06] pt-4">
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-3 py-2.5 text-[11px] uppercase tracking-wide text-white/40 hover:text-gold"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                Logout
+              </button>
+            </div>
+          )}
         </div>
       )}
     </header>

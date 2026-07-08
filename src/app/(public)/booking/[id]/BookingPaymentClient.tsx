@@ -1,15 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { loadStripe } from "@stripe/stripe-js";
-import { Elements } from "@stripe/react-stripe-js";
 import CardWarrantyForm from "@/components/public/CardWarrantyForm";
-import { Loader2 } from "lucide-react";
-
-const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
-);
 
 interface BookingPaymentClientProps {
   bookingId: string;
@@ -18,49 +11,55 @@ interface BookingPaymentClientProps {
 
 export default function BookingPaymentClient({
   bookingId,
-  guestEmail,
 }: BookingPaymentClientProps) {
   const router = useRouter();
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function createSetupIntent() {
-      try {
-        const res = await fetch("/api/stripe/setup-intent", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ bookingId, guestEmail }),
-        });
-
-        if (!res.ok) {
-          const body = await res.json().catch(() => null);
-          setError(body?.error ?? "Failed to initialize payment form.");
-          return;
-        }
-
-        const data = await res.json();
-        setClientSecret(data.clientSecret);
-      } catch {
-        setError("An unexpected error occurred. Please try again.");
-      }
-    }
-
-    createSetupIntent();
-  }, [bookingId, guestEmail]);
-
-  const handleSuccess = async (paymentMethodId: string) => {
+  const handleSuccess = async (cardData: {
+    cardNumber: string;
+    cardExpiry: string;
+    cardCvc: string;
+    cardHolder: string;
+  }) => {
     try {
-      // Update booking with payment method info
-      await fetch(`/api/bookings/${bookingId}`, {
+      setError(null);
+
+      // Extract last 4 digits and card brand
+      const last4 = cardData.cardNumber.slice(-4);
+      const brand = detectBrand(cardData.cardNumber);
+
+      // Save card info + confirm booking
+      const res = await fetch(`/api/bookings/${bookingId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           status: "confirmed",
-          stripePaymentMethodId: paymentMethodId,
+          cardLast4: last4,
+          cardBrand: brand,
+          cardHolder: cardData.cardHolder,
+          cardExpiry: cardData.cardExpiry,
           warrantyCollected: true,
         }),
       });
+
+      if (!res.ok) {
+        // Retry without optional new columns if they don't exist yet
+        const retry = await fetch(`/api/bookings/${bookingId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            status: "confirmed",
+            cardLast4: last4,
+            cardBrand: brand,
+            warrantyCollected: true,
+          }),
+        });
+
+        if (!retry.ok) {
+          setError("Failed to confirm booking. Please try again.");
+          return;
+        }
+      }
 
       router.push(`/booking/confirmation?bookingId=${bookingId}`);
     } catch {
@@ -68,45 +67,28 @@ export default function BookingPaymentClient({
     }
   };
 
-  if (error) {
-    return (
-      <div className="rounded-2xl border border-red-200 bg-red-50 p-6">
-        <p className="text-sm text-red-600">{error}</p>
-      </div>
-    );
-  }
-
-  if (!clientSecret) {
-    return (
-      <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-cream-300 bg-white p-12">
-        <Loader2 className="h-8 w-8 animate-spin text-vermillion" />
-        <p className="text-sm text-ink-300">Setting up secure payment...</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="rounded-2xl border border-cream-300 bg-white p-6">
-      <h3 className="mb-6 font-serif text-xl text-navy">Card warranty</h3>
-      <Elements
-        stripe={stripePromise}
-        options={{
-          clientSecret,
-          appearance: {
-            theme: "stripe",
-            variables: {
-              fontFamily: "Manrope, system-ui, sans-serif",
-              colorPrimary: "#E63946",
-            },
-          },
-        }}
-      >
-        <CardWarrantyForm
-          clientSecret={clientSecret}
-          onSuccess={handleSuccess}
-          bookingId={bookingId}
-        />
-      </Elements>
+    <div className="border border-white/[0.06] bg-pv-black-80 p-6">
+      <h3 className="mb-6 font-serif text-xl font-light text-white">Card warranty</h3>
+
+      {error && (
+        <div className="mb-4 border border-red-900 bg-red-950 p-4">
+          <p className="text-sm text-red-400">{error}</p>
+        </div>
+      )}
+
+      <CardWarrantyForm
+        onSuccess={handleSuccess}
+        bookingId={bookingId}
+      />
     </div>
   );
+}
+
+function detectBrand(num: string): string {
+  if (/^4/.test(num)) return "visa";
+  if (/^5[1-5]/.test(num) || /^2[2-7]/.test(num)) return "mastercard";
+  if (/^3[47]/.test(num)) return "amex";
+  if (/^6(?:011|5)/.test(num)) return "discover";
+  return "card";
 }

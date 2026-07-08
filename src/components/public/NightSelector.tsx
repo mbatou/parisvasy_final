@@ -27,10 +27,10 @@ export default function NightSelector({
             type="button"
             onClick={() => onChange(nights)}
             className={cn(
-              "flex flex-1 flex-col items-center rounded-xl border-2 px-4 py-3 transition-all",
+              "flex flex-1 flex-col items-center border-2 px-4 py-3 transition-all",
               isSelected
-                ? "border-vermillion bg-vermillion text-white"
-                : "border-cream-300 bg-white text-ink hover:border-vermillion-200"
+                ? "border-gold bg-gold text-pv-black"
+                : "border-white/[0.06] bg-pv-black-80 text-white hover:border-gold/40"
             )}
           >
             <span className="text-lg font-bold">
@@ -39,7 +39,7 @@ export default function NightSelector({
             <span
               className={cn(
                 "mt-0.5 text-sm font-medium",
-                isSelected ? "text-vermillion-100" : "text-ink-300"
+                isSelected ? "text-pv-black/60" : "text-white/40"
               )}
             >
               {formatCurrency(total)}

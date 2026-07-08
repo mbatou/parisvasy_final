@@ -1,21 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function GET(request: NextRequest) {
   try {
+    const supabase = createAdminClient();
     const { searchParams } = new URL(request.url);
     const hotelId = searchParams.get("hotelId");
 
-    const where: Record<string, unknown> = {};
-    if (hotelId) where.hotelId = hotelId;
+    let query = supabase
+      .from("Room")
+      .select("*, hotel:Hotel(*)")
+      .order("pricePerNight", { ascending: true });
 
-    const rooms = await prisma.room.findMany({
-      where,
-      include: {
-        hotel: true,
-      },
-      orderBy: { pricePerNight: "asc" },
-    });
+    if (hotelId) query = query.eq("hotelId", hotelId);
+
+    const { data: rooms, error } = await query;
+
+    if (error) throw error;
 
     return NextResponse.json(rooms);
   } catch (error) {
@@ -29,6 +30,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = createAdminClient();
     const body = await request.json();
     const {
       hotelId,
@@ -43,8 +45,9 @@ export async function POST(request: NextRequest) {
       totalRooms,
     } = body;
 
-    const room = await prisma.room.create({
-      data: {
+    const { data: room, error } = await supabase
+      .from("Room")
+      .insert({
         hotelId,
         name,
         type,
@@ -55,11 +58,12 @@ export async function POST(request: NextRequest) {
         images: images ?? [],
         pricePerNight,
         totalRooms: totalRooms ?? 1,
-      },
-      include: {
-        hotel: true,
-      },
-    });
+        updatedAt: new Date().toISOString(),
+      })
+      .select("*, hotel:Hotel(*)")
+      .single();
+
+    if (error) throw error;
 
     return NextResponse.json(room, { status: 201 });
   } catch (error) {

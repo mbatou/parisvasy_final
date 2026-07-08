@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { HotelEditClient } from "./HotelEditClient";
 
 export default async function EditHotelPage({
@@ -11,26 +11,29 @@ export default async function EditHotelPage({
 }) {
   const { id } = await params;
 
-  const hotel = await prisma.hotel.findUnique({
-    where: { id },
-  });
+  const db = createAdminClient();
+  const { data: hotel, error } = await db
+    .from('Hotel')
+    .select('*')
+    .eq('id', id)
+    .single();
 
-  if (!hotel) {
+  if (error || !hotel) {
     notFound();
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-navy-500 font-serif">
+        <h1 className="text-2xl font-light text-white font-serif">
           Edit Hotel
         </h1>
-        <p className="mt-1 text-sm text-navy-300 font-sans">
+        <p className="mt-1 text-sm text-white/40 font-sans">
           Update &ldquo;{hotel.name}&rdquo;
         </p>
       </div>
 
-      <div className="rounded-xl border border-navy-100 bg-white p-6 shadow-sm">
+      <div className="border border-white/[0.06] bg-pv-black-80 p-6">
         <HotelEditClient hotel={JSON.parse(JSON.stringify(hotel))} />
       </div>
     </div>

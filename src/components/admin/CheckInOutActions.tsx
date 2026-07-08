@@ -27,17 +27,17 @@ export function CheckInOutActions({
     <div className="space-y-4">
       {/* Timestamps */}
       {booking.checkedInAt && (
-        <div className="rounded-lg bg-green-50 px-4 py-3 text-sm">
-          <span className="font-medium text-green-800">Checked in:</span>{" "}
-          <span className="text-green-700">
+        <div className="rounded bg-green-900/30 px-4 py-3 text-sm">
+          <span className="font-light text-green-400">Checked in:</span>{" "}
+          <span className="font-light text-green-300">
             {formatDate(booking.checkedInAt)}
           </span>
         </div>
       )}
       {booking.checkedOutAt && (
-        <div className="rounded-lg bg-blue-50 px-4 py-3 text-sm">
-          <span className="font-medium text-blue-800">Checked out:</span>{" "}
-          <span className="text-blue-700">
+        <div className="rounded bg-blue-900/30 px-4 py-3 text-sm">
+          <span className="font-light text-blue-400">Checked out:</span>{" "}
+          <span className="font-light text-blue-300">
             {formatDate(booking.checkedOutAt)}
           </span>
         </div>
@@ -80,8 +80,8 @@ export function CheckInOutActions({
                 Cancel Booking
               </Button>
             ) : (
-              <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2">
-                <span className="text-sm font-medium text-red-700">
+              <div className="flex items-center gap-2 rounded border border-red-500/30 bg-red-900/30 px-4 py-2">
+                <span className="text-sm font-light text-red-400">
                   Are you sure?
                 </span>
                 <Button

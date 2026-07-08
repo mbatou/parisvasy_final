@@ -47,24 +47,11 @@ export function useAuth() {
   }, []);
 
   const signIn = useCallback(
-    async (email: string, password: string) => {
+    async (username: string, password: string) => {
+      const email = `${username.toLowerCase().trim()}@parisvasy.com`;
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
-      });
-      if (error) throw error;
-      return data;
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
-  );
-
-  const signUp = useCallback(
-    async (email: string, password: string, metadata?: Record<string, unknown>) => {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { data: metadata },
       });
       if (error) throw error;
       return data;
@@ -84,7 +71,6 @@ export function useAuth() {
     session: state.session,
     loading: state.loading,
     signIn,
-    signUp,
     signOut,
   };
 }

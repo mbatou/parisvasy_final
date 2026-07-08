@@ -33,17 +33,17 @@ export default function ExperienceGrid({ experiences }: ExperienceGridProps) {
   return (
     <div>
       {/* Category Filter Tabs */}
-      <div className="mb-8 flex flex-wrap gap-2">
+      <div className="mb-10 flex flex-wrap gap-3">
         {ALL_CATEGORIES.map((cat) => (
           <button
             key={cat}
             type="button"
             onClick={() => setActiveCategory(cat)}
             className={cn(
-              "rounded-full border px-4 py-2 text-sm font-medium transition-colors",
+              "border px-5 py-2.5 text-[11px] uppercase tracking-wide font-medium transition-all",
               activeCategory === cat
-                ? "border-vermillion bg-vermillion text-white"
-                : "border-cream-300 bg-white text-ink-400 hover:border-vermillion-200 hover:text-vermillion"
+                ? "border-gold bg-gold text-pv-black"
+                : "border-white/10 bg-transparent text-white/50 hover:border-gold/30 hover:text-gold"
             )}
           >
             {cat === "all" ? "All" : CATEGORY_LABELS[cat]}
@@ -54,16 +54,16 @@ export default function ExperienceGrid({ experiences }: ExperienceGridProps) {
       {/* Grid */}
       {filtered.length > 0 ? (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((experience) => (
-            <ExperienceCard key={experience.id} experience={experience} />
+          {filtered.map((experience, i) => (
+            <ExperienceCard key={experience.id} experience={experience} index={i} />
           ))}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center rounded-2xl bg-cream py-20 text-center">
-          <p className="text-lg font-medium text-ink-300">
+        <div className="flex flex-col items-center justify-center border border-white/[0.06] bg-pv-black-80 py-20 text-center">
+          <p className="text-lg font-serif text-white/40 font-light">
             No experiences found
           </p>
-          <p className="mt-1 text-sm text-ink-200">
+          <p className="mt-2 text-sm text-white/20 font-light">
             Try selecting a different category or check back later.
           </p>
         </div>

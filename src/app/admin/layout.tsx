@@ -1,11 +1,10 @@
 export const dynamic = "force-dynamic";
 
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { prisma } from "@/lib/prisma";
-import { Sidebar } from "@/components/admin/Sidebar";
-import { TopBar } from "@/components/admin/TopBar";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { AdminShell } from "@/components/admin/AdminShell";
 import type { UserRole } from "@/types";
 
 export default async function AdminLayout({
@@ -23,28 +22,79 @@ export default async function AdminLayout({
   }
 
   // Get all staff assignments for this user
-  const assignments = await prisma.staffAssignment.findMany({
-    where: { userId: user.id, isActive: true },
-    include: { hotel: { select: { id: true, name: true } } },
-    orderBy: { createdAt: "desc" },
-  });
+  let assignments: Array<{
+    role: string;
+    hotelId: string;
+    hotel: { id: string; name: string };
+  }> = [];
+
+  try {
+    const db = createAdminClient();
+    const { data } = await db
+      .from('StaffAssignment')
+      .select('role, hotelId, hotel:Hotel(id, name)')
+      .eq('userId', user.id)
+      .eq('isActive', true)
+      .order('createdAt', { ascending: false });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    assignments = (data ?? []).map((d: any) => ({
+      role: d.role,
+      hotelId: d.hotelId,
+      hotel: Array.isArray(d.hotel) ? d.hotel[0] : d.hotel,
+    }));
+  } catch {
+    // Tables might not exist yet
+  }
+
+  // Auto-recover super_admin access if assignments were lost (e.g. hotel cascade delete)
+  if (assignments.length === 0) {
+    const metaRole = user.user_metadata?.role as string | undefined;
+
+    if (metaRole === "super_admin") {
+      try {
+        const db = createAdminClient();
+        // Find any hotel to reassign to
+        const { data: anyHotel } = await db
+          .from("Hotel")
+          .select("id, name")
+          .limit(1)
+          .single();
+
+        if (anyHotel) {
+          await db.from("StaffAssignment").insert({
+            userId: user.id,
+            hotelId: anyHotel.id,
+            role: "super_admin",
+            isActive: true,
+          });
+
+          assignments = [
+            { role: "super_admin", hotelId: anyHotel.id, hotel: anyHotel },
+          ];
+        }
+      } catch {
+        // Recovery failed, fall through to access denied
+      }
+    }
+  }
 
   if (assignments.length === 0) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-cream-100">
-        <div className="rounded-xl border border-navy-100 bg-white p-8 text-center shadow-sm">
-          <h1 className="text-2xl font-bold text-navy-500 font-serif">
+      <div className="flex min-h-screen items-center justify-center bg-pv-black">
+        <div className="border border-white/[0.06] bg-pv-black-80 p-8 text-center max-w-md">
+          <h1 className="text-2xl font-serif text-white font-light">
             Access Denied
           </h1>
-          <p className="mt-2 text-sm text-navy-300 font-sans">
+          <p className="mt-3 text-sm text-white/40 font-light">
             You do not have permission to access the admin panel.
           </p>
-          <p className="mt-1 text-xs text-navy-200 font-sans">
+          <p className="mt-1 text-xs text-white/20 font-light">
             Error 403 &mdash; No staff assignment found for your account.
           </p>
           <a
             href="/"
-            className="mt-4 inline-block rounded-lg bg-vermillion-500 px-4 py-2 text-sm font-semibold text-white hover:bg-vermillion-600 transition-colors"
+            className="mt-6 inline-block border border-gold px-6 py-2 text-[11px] uppercase tracking-wide text-gold font-medium hover:bg-gold hover:text-pv-black transition-all"
           >
             Return Home
           </a>
@@ -54,49 +104,61 @@ export default async function AdminLayout({
   }
 
   const role = assignments[0].role as UserRole;
-  const currentHotelId = assignments[0].hotelId;
+  const assignedHotelId = assignments[0].hotelId;
 
-  // For super_admin, get all hotels
-  let hotels = assignments.map((a) => a.hotel);
+  // For super_admin, get all hotels and read selected hotel from cookie
+  let hotels = assignments.map((a) => a.hotel).filter(Boolean);
   if (role === "super_admin") {
-    hotels = await prisma.hotel.findMany({
-      select: { id: true, name: true },
-      orderBy: { name: "asc" },
-    });
+    try {
+      const db = createAdminClient();
+      const { data } = await db
+        .from('Hotel')
+        .select('id, name')
+        .order('name', { ascending: true });
+
+      hotels = data ?? hotels;
+    } catch {
+      // Tables might not exist yet
+    }
   }
 
-  // Resolve current path from headers
-  const headerList = await headers();
-  const currentPath = headerList.get("x-pathname") ?? "/admin";
+  // Determine current hotel context
+  const cookieStore = await cookies();
+  const savedHotelId = cookieStore.get("pv_selected_hotel")?.value;
+  const currentHotelId = role === "super_admin"
+    ? (savedHotelId && savedHotelId !== "all" ? savedHotelId : "all")
+    : assignedHotelId;
 
   // Guest record for display name (fallback to email)
-  const guest = await prisma.guest.findFirst({
-    where: { authUserId: user.id },
-    select: { firstName: true, lastName: true },
-  });
+  let guest: { firstName: string; lastName: string } | null = null;
+  try {
+    const db = createAdminClient();
+    const { data } = await db
+      .from('Guest')
+      .select('firstName, lastName')
+      .eq('authUserId', user.id)
+      .limit(1)
+      .single();
+
+    guest = data;
+  } catch {
+    // Tables might not exist yet
+  }
 
   const topBarUser = {
-    firstName: guest?.firstName ?? user.email?.split("@")[0] ?? "Admin",
-    lastName: guest?.lastName ?? "",
+    firstName: guest?.firstName ?? user.user_metadata?.first_name ?? user.email?.split("@")[0] ?? "Admin",
+    lastName: guest?.lastName ?? user.user_metadata?.last_name ?? "",
     email: user.email ?? "",
   };
 
   return (
-    <div className="min-h-screen bg-cream-100">
-      <Sidebar
-        userRole={role}
-        currentHotelId={currentHotelId}
-        hotels={hotels}
-        currentPath={currentPath}
-      />
-      <div className="lg:ml-64">
-        <TopBar
-          user={topBarUser}
-          role={role}
-          breadcrumbs={[{ label: "Admin", href: "/admin" }]}
-        />
-        <main className="p-6">{children}</main>
-      </div>
-    </div>
+    <AdminShell
+      userRole={role}
+      currentHotelId={currentHotelId}
+      hotels={hotels}
+      topBarUser={topBarUser}
+    >
+      {children}
+    </AdminShell>
   );
 }

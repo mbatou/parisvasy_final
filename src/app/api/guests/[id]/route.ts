@@ -1,32 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const supabase = createAdminClient();
     const { id } = await params;
 
-    const guest = await prisma.guest.findUnique({
-      where: { id },
-      include: {
-        bookings: {
-          include: {
-            hotel: true,
-            room: true,
-            experience: true,
-          },
-          orderBy: { checkIn: "desc" },
-        },
-      },
-    });
+    const { data: guest, error } = await supabase
+      .from("Guest")
+      .select("*")
+      .eq("id", id)
+      .single();
 
-    if (!guest) {
+    if (error || !guest) {
       return NextResponse.json({ error: "Guest not found" }, { status: 404 });
     }
 
-    return NextResponse.json(guest);
+    // Fetch bookings with relations separately
+    const { data: bookings } = await supabase
+      .from("Booking")
+      .select("*, hotel:Hotel(*), room:Room(*), experience:Experience(*)")
+      .eq("guestId", id)
+      .order("checkIn", { ascending: false });
+
+    return NextResponse.json({ ...guest, bookings: bookings ?? [] });
   } catch (error) {
     console.error("Error fetching guest:", error);
     return NextResponse.json(
@@ -41,13 +41,18 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const supabase = createAdminClient();
     const { id } = await params;
     const body = await request.json();
 
-    const guest = await prisma.guest.update({
-      where: { id },
-      data: body,
-    });
+    const { data: guest, error } = await supabase
+      .from("Guest")
+      .update({ ...body, updatedAt: new Date().toISOString() })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) throw error;
 
     return NextResponse.json(guest);
   } catch (error) {

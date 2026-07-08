@@ -60,14 +60,14 @@ export default function RoomSelector({
             type="button"
             onClick={() => onChange(room.id)}
             className={cn(
-              "flex flex-col overflow-hidden rounded-2xl border-2 bg-white text-left transition-all sm:flex-row",
+              "flex flex-col overflow-hidden border-2 bg-pv-black-80 text-left transition-all sm:flex-row",
               isSelected
-                ? "border-vermillion shadow-md"
-                : "border-cream-300 hover:border-vermillion-200"
+                ? "border-gold"
+                : "border-white/[0.06] hover:border-gold/40"
             )}
           >
             {/* Room Image */}
-            <div className="relative aspect-[16/10] w-full shrink-0 bg-cream-200 sm:aspect-auto sm:h-auto sm:w-48">
+            <div className="relative aspect-[16/10] w-full shrink-0 bg-pv-black-90 sm:aspect-auto sm:h-auto sm:w-48">
               {room.images[0] ? (
                 <Image
                   src={room.images[0]}
@@ -77,12 +77,12 @@ export default function RoomSelector({
                   sizes="(max-width: 640px) 100vw, 192px"
                 />
               ) : (
-                <div className="flex h-full min-h-[120px] items-center justify-center text-ink-200">
+                <div className="flex h-full min-h-[120px] items-center justify-center text-white/30">
                   <BedDouble className="h-8 w-8" />
                 </div>
               )}
               {isSelected && (
-                <div className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-vermillion text-white">
+                <div className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-gold text-pv-black">
                   <Check className="h-4 w-4" />
                 </div>
               )}
@@ -93,22 +93,22 @@ export default function RoomSelector({
               <div>
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <h4 className="font-serif text-lg text-navy">
+                    <h4 className="font-serif text-lg font-light text-white">
                       {room.name}
                     </h4>
-                    <span className="text-xs font-medium uppercase tracking-wider text-ink-300">
+                    <span className="text-xs font-medium uppercase tracking-wider text-white/40">
                       {room.type}
                     </span>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-bold text-vermillion">
+                    <p className="text-lg font-bold text-gold">
                       {formatCurrency(price)}
                     </p>
-                    <span className="text-xs text-ink-300">/night</span>
+                    <span className="text-xs text-white/40">/night</span>
                   </div>
                 </div>
 
-                <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-ink-300">
+                <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-white/40">
                   <span className="flex items-center gap-1">
                     <Maximize2 className="h-3.5 w-3.5" />
                     {room.size} m&sup2;
@@ -126,14 +126,14 @@ export default function RoomSelector({
                   {room.amenities.slice(0, 5).map((amenity) => (
                     <span
                       key={amenity}
-                      className="flex items-center gap-1 rounded-full bg-cream px-2 py-0.5 text-xs text-ink-400"
+                      className="flex items-center gap-1 rounded-full bg-pv-black-90 px-2 py-0.5 text-xs text-white/50"
                     >
                       {getAmenityIcon(amenity)}
                       {amenity}
                     </span>
                   ))}
                   {room.amenities.length > 5 && (
-                    <span className="rounded-full bg-cream px-2 py-0.5 text-xs text-ink-300">
+                    <span className="rounded-full bg-pv-black-90 px-2 py-0.5 text-xs text-white/40">
                       +{room.amenities.length - 5} more
                     </span>
                   )}

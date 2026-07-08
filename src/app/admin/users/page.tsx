@@ -2,10 +2,11 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { prisma } from "@/lib/prisma";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserStaffAssignments } from "@/lib/auth";
 import type { UserRole } from "@/types";
 import { UsersPageClient } from "./UsersPageClient";
+import { UserPlus } from "lucide-react";
 
 export default async function UsersPage() {
   const supabase = await createClient();
@@ -20,67 +21,80 @@ export default async function UsersPage() {
 
   const role = assignments[0].role as UserRole;
 
-  // Only super_admin can access this page
   if (role !== "super_admin") {
     return (
       <div className="flex flex-col items-center justify-center py-16">
-        <h1 className="text-2xl font-bold text-navy-500 font-serif">
+        <h1 className="text-2xl font-light text-white font-serif">
           Access Denied
         </h1>
-        <p className="mt-2 text-sm text-navy-300">
+        <p className="mt-2 text-sm text-white/40">
           Only super administrators can manage users.
         </p>
       </div>
     );
   }
 
-  const hotels = await prisma.hotel.findMany({
-    select: { id: true, name: true },
-    orderBy: { name: "asc" },
-  });
+  const db = createAdminClient();
 
-  const staffAssignments = await prisma.staffAssignment.findMany({
-    include: {
-      hotel: { select: { id: true, name: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const { data: hotelsData } = await db
+    .from('Hotel')
+    .select('id, name')
+    .order('name', { ascending: true });
 
-  // Enrich with guest data where possible (for display names)
-  const enrichedStaff = await Promise.all(
-    staffAssignments.map(async (sa) => {
-      const guest = await prisma.guest.findFirst({
-        where: { authUserId: sa.userId },
-        select: { firstName: true, lastName: true, email: true },
-      });
+  const hotels = hotelsData ?? [];
 
-      return {
-        ...sa,
-        role: sa.role as UserRole,
-        name: guest
-          ? `${guest.firstName} ${guest.lastName}`
-          : undefined,
-        email: guest?.email ?? undefined,
-      };
-    })
+  const { data: staffAssignmentsData } = await db
+    .from('StaffAssignment')
+    .select('*, hotel:Hotel(id, name)')
+    .order('createdAt', { ascending: false });
+
+  const staffAssignments = staffAssignmentsData ?? [];
+
+  // Get all unique userIds
+  const userIds = [...new Set(staffAssignments.map((sa) => sa.userId))];
+
+  // Batch fetch all guests by authUserId
+  const { data: guestsData } = userIds.length > 0
+    ? await db
+        .from('Guest')
+        .select('authUserId, firstName, lastName, email')
+        .in('authUserId', userIds)
+    : { data: [] };
+
+  const guestsByUserId = new Map(
+    (guestsData ?? []).map((g) => [g.authUserId, g])
   );
+
+  const enrichedStaff = staffAssignments.map((sa) => {
+    const guest = guestsByUserId.get(sa.userId);
+
+    return {
+      ...sa,
+      role: sa.role as UserRole,
+      name: guest
+        ? `${guest.firstName} ${guest.lastName}`
+        : undefined,
+      email: guest?.email ?? undefined,
+    };
+  });
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-navy-500 font-serif">
+          <h1 className="text-2xl font-light text-white font-serif">
             Users &amp; Staff
           </h1>
-          <p className="mt-1 text-sm text-navy-300 font-sans">
+          <p className="mt-1 text-sm text-white/40 font-sans">
             Manage staff members and their role assignments.
           </p>
         </div>
         <Link
           href="/admin/users/new"
-          className="inline-flex items-center gap-2 rounded-lg bg-vermillion-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-vermillion-600"
+          className="inline-flex items-center gap-2 bg-gold text-pv-black px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-gold-light"
         >
-          Invite Staff
+          <UserPlus className="h-4 w-4" />
+          Add Staff Member
         </Link>
       </div>
 

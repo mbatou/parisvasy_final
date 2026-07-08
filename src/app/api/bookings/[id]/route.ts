@@ -1,24 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const supabase = createAdminClient();
     const { id } = await params;
 
-    const booking = await prisma.booking.findUnique({
-      where: { id },
-      include: {
-        hotel: true,
-        room: true,
-        experience: true,
-        guest: true,
-      },
-    });
+    const { data: booking, error } = await supabase
+      .from("Booking")
+      .select("*, hotel:Hotel(*), room:Room(*), experience:Experience(*), guest:Guest(*)")
+      .eq("id", id)
+      .single();
 
-    if (!booking) {
+    if (error || !booking) {
       return NextResponse.json(
         { error: "Booking not found" },
         { status: 404 }
@@ -40,46 +38,84 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const supabase = createAdminClient();
     const { id } = await params;
     const body = await request.json();
 
-    const {
-      status,
-      checkedInAt,
-      checkedInBy,
-      checkedOutAt,
-      checkedOutBy,
-      notes,
-      stripeSetupIntentId,
-      stripePaymentMethodId,
-      cardLast4,
-      cardBrand,
-      warrantyCollected,
-    } = body;
+    // Get current user for check-in/out tracking
+    const authClient = await createClient();
+    const { data: { user } } = await authClient.auth.getUser();
 
-    const data: Record<string, unknown> = {};
-    if (status !== undefined) data.status = status;
-    if (checkedInAt !== undefined) data.checkedInAt = new Date(checkedInAt);
-    if (checkedInBy !== undefined) data.checkedInBy = checkedInBy;
-    if (checkedOutAt !== undefined) data.checkedOutAt = new Date(checkedOutAt);
-    if (checkedOutBy !== undefined) data.checkedOutBy = checkedOutBy;
-    if (notes !== undefined) data.notes = notes;
-    if (stripeSetupIntentId !== undefined) data.stripeSetupIntentId = stripeSetupIntentId;
-    if (stripePaymentMethodId !== undefined) data.stripePaymentMethodId = stripePaymentMethodId;
-    if (cardLast4 !== undefined) data.cardLast4 = cardLast4;
-    if (cardBrand !== undefined) data.cardBrand = cardBrand;
-    if (warrantyCollected !== undefined) data.warrantyCollected = warrantyCollected;
+    const data: Record<string, unknown> = { updatedAt: new Date().toISOString() };
 
-    const booking = await prisma.booking.update({
-      where: { id },
-      data,
-      include: {
-        hotel: true,
-        room: true,
-        experience: true,
-        guest: true,
-      },
-    });
+    // Handle action-based status changes
+    if (body.action) {
+      const now = new Date().toISOString();
+      switch (body.action) {
+        case "confirm":
+          data.status = "confirmed";
+          break;
+        case "check_in":
+          data.status = "checked_in";
+          data.checkedInAt = now;
+          if (user) data.checkedInBy = user.id;
+          break;
+        case "check_out":
+          data.status = "checked_out";
+          data.checkedOutAt = now;
+          if (user) data.checkedOutBy = user.id;
+          break;
+        case "cancel":
+          data.status = "cancelled";
+          break;
+        case "no_show":
+          data.status = "no_show";
+          break;
+      }
+    }
+
+    // Handle direct field updates
+    if (body.status !== undefined && !body.action) data.status = body.status;
+    if (body.checkIn !== undefined) data.checkIn = new Date(body.checkIn).toISOString();
+    if (body.checkOut !== undefined) data.checkOut = new Date(body.checkOut).toISOString();
+    if (body.roomId !== undefined) data.roomId = body.roomId;
+    if (body.guestCount !== undefined) data.guestCount = body.guestCount;
+    if (body.notes !== undefined) data.notes = body.notes;
+    if (body.nights !== undefined) data.nights = body.nights;
+    if (body.roomTotal !== undefined) data.roomTotal = body.roomTotal;
+    if (body.checkedInAt !== undefined) data.checkedInAt = new Date(body.checkedInAt).toISOString();
+    if (body.checkedInBy !== undefined) data.checkedInBy = body.checkedInBy;
+    if (body.checkedOutAt !== undefined) data.checkedOutAt = new Date(body.checkedOutAt).toISOString();
+    if (body.checkedOutBy !== undefined) data.checkedOutBy = body.checkedOutBy;
+    if (body.stripeSetupIntentId !== undefined) data.stripeSetupIntentId = body.stripeSetupIntentId;
+    if (body.stripePaymentMethodId !== undefined) data.stripePaymentMethodId = body.stripePaymentMethodId;
+    if (body.cardLast4 !== undefined) data.cardLast4 = body.cardLast4;
+    if (body.cardBrand !== undefined) data.cardBrand = body.cardBrand;
+    if (body.cardHolder !== undefined) data.cardHolder = body.cardHolder;
+    if (body.cardExpiry !== undefined) data.cardExpiry = body.cardExpiry;
+    if (body.warrantyCollected !== undefined) data.warrantyCollected = body.warrantyCollected;
+
+    let { data: booking, error } = await supabase
+      .from("Booking")
+      .update(data)
+      .eq("id", id)
+      .select("*, hotel:Hotel(*), room:Room(*), experience:Experience(*), guest:Guest(*)")
+      .single();
+
+    // If update fails (e.g. new columns not migrated yet), retry without optional card fields
+    if (error && (data.cardHolder !== undefined || data.cardExpiry !== undefined)) {
+      const { cardHolder, cardExpiry, ...safeData } = data;
+      const retry = await supabase
+        .from("Booking")
+        .update(safeData)
+        .eq("id", id)
+        .select("*, hotel:Hotel(*), room:Room(*), experience:Experience(*), guest:Guest(*)")
+        .single();
+      booking = retry.data;
+      error = retry.error;
+    }
+
+    if (error) throw error;
 
     return NextResponse.json(booking);
   } catch (error) {
@@ -96,12 +132,17 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const supabase = createAdminClient();
     const { id } = await params;
 
-    const booking = await prisma.booking.update({
-      where: { id },
-      data: { status: "cancelled" },
-    });
+    const { data: booking, error } = await supabase
+      .from("Booking")
+      .update({ status: "cancelled", updatedAt: new Date().toISOString() })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) throw error;
 
     return NextResponse.json(booking);
   } catch (error) {

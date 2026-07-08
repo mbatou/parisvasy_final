@@ -22,8 +22,8 @@ const ROLE_OPTIONS: { value: UserRole; label: string }[] = [
   { value: "front_desk", label: "Front Desk" },
 ];
 
-const ROLE_BADGE_VARIANT: Record<UserRole, "vermillion" | "navy" | "blue" | "green" | "default"> = {
-  super_admin: "vermillion",
+const ROLE_BADGE_VARIANT: Record<UserRole, "gold" | "navy" | "blue" | "green" | "default"> = {
+  super_admin: "gold",
   hotel_manager: "navy",
   finance_manager: "blue",
   front_desk: "green",
@@ -83,8 +83,8 @@ export function UserRoleManager({
   return (
     <div className="space-y-8">
       {/* Invite form */}
-      <div className="rounded-xl border border-navy-100 bg-white p-6">
-        <h3 className="mb-4 text-lg font-semibold text-navy-500">
+      <div className="rounded border border-white/[0.06] bg-pv-black-80 p-6">
+        <h3 className="mb-4 text-lg font-light text-white">
           Invite Staff Member
         </h3>
         <form onSubmit={handleInvite} className="flex flex-wrap items-end gap-4">
@@ -133,9 +133,9 @@ export function UserRoleManager({
       </div>
 
       {/* Staff list */}
-      <div className="rounded-xl border border-navy-100 bg-white">
-        <div className="border-b border-navy-100 px-6 py-4">
-          <h3 className="text-lg font-semibold text-navy-500">Staff Members</h3>
+      <div className="rounded border border-white/[0.06] bg-pv-black-80">
+        <div className="border-b border-white/[0.06] px-6 py-4">
+          <h3 className="text-lg font-light text-white">Staff Members</h3>
         </div>
         <Table>
           <TableHeader>
@@ -150,7 +150,7 @@ export function UserRoleManager({
           <TableBody>
             {staff.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="py-8 text-center text-navy-300">
+                <TableCell colSpan={5} className="py-8 text-center text-white/40">
                   No staff members found.
                 </TableCell>
               </TableRow>
@@ -160,13 +160,13 @@ export function UserRoleManager({
                   <TableCell>
                     <div>
                       {member.name && (
-                        <p className="font-medium text-navy-500">{member.name}</p>
+                        <p className="font-light text-white">{member.name}</p>
                       )}
                       {member.email && (
-                        <p className="text-xs text-navy-300">{member.email}</p>
+                        <p className="text-xs font-light text-white/40">{member.email}</p>
                       )}
                       {!member.name && !member.email && (
-                        <p className="text-navy-300">-</p>
+                        <p className="font-light text-white/40">-</p>
                       )}
                     </div>
                   </TableCell>
@@ -187,7 +187,7 @@ export function UserRoleManager({
                         variant="ghost"
                         size="sm"
                         onClick={() => onDeactivate(member.id)}
-                        className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                        className="text-red-400 hover:bg-red-900/30 hover:text-red-300"
                       >
                         <ShieldOff className="h-4 w-4" />
                         Deactivate

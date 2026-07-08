@@ -11,17 +11,30 @@ interface HotelEditClientProps {
 export function HotelEditClient({ hotel }: HotelEditClientProps) {
   const router = useRouter();
 
-  const handleSubmit = async (data: Record<string, unknown>) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleSubmit = async (data: any) => {
     const res = await fetch(`/api/hotels/${hotel.id}`, {
-      method: "PUT",
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
 
     if (res.ok) {
       router.push("/admin/hotels");
+      router.refresh();
     }
   };
 
-  return <HotelForm hotel={hotel} onSubmit={handleSubmit} />;
+  const handleDelete = async () => {
+    const res = await fetch(`/api/hotels/${hotel.id}`, {
+      method: "DELETE",
+    });
+
+    if (res.ok) {
+      router.push("/admin/hotels");
+      router.refresh();
+    }
+  };
+
+  return <HotelForm hotel={hotel} onSubmit={handleSubmit} onDelete={handleDelete} />;
 }

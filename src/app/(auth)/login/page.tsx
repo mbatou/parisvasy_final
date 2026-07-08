@@ -2,7 +2,6 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -12,7 +11,7 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect");
 
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -24,6 +23,7 @@ function LoginForm() {
 
     try {
       const supabase = createClient();
+      const email = `${username.toLowerCase().trim()}@parisvasy.com`;
 
       const { data, error: signInError } =
         await supabase.auth.signInWithPassword({
@@ -62,26 +62,28 @@ function LoginForm() {
 
   return (
     <div>
-      <h2 className="text-center text-2xl text-navy">Welcome back</h2>
-      <p className="mt-1 text-center text-sm text-ink-300">
-        Sign in to your account
+      <h2 className="text-center font-serif text-2xl text-white font-light">
+        Back-office login
+      </h2>
+      <p className="mt-2 text-center text-sm text-white/40 font-light">
+        Staff access only
       </p>
 
       {error && (
-        <div className="mt-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
+        <div className="mt-6 border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
           {error}
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-5">
         <Input
-          label="Email"
-          type="email"
-          placeholder="you@example.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          label="Username"
+          type="text"
+          placeholder="your username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
           required
-          autoComplete="email"
+          autoComplete="username"
         />
         <Input
           label="Password"
@@ -97,14 +99,8 @@ function LoginForm() {
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-ink-300">
-        Don&apos;t have an account?{" "}
-        <Link
-          href="/register"
-          className="font-medium text-vermillion hover:text-vermillion-600"
-        >
-          Register
-        </Link>
+      <p className="mt-6 text-center text-sm text-white/40 font-light">
+        Contact your administrator to get access.
       </p>
     </div>
   );
@@ -112,7 +108,11 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="text-center py-8 text-ink-300">Loading...</div>}>
+    <Suspense
+      fallback={
+        <div className="text-center py-8 text-white/40">Loading...</div>
+      }
+    >
       <LoginForm />
     </Suspense>
   );

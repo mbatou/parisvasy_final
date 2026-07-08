@@ -2,11 +2,12 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { STATUS_COLORS, STATUS_LABELS } from "@/types";
+import type { BookingStatus } from "@/types";
 import {
   Table,
   TableHeader,
@@ -16,6 +17,7 @@ import {
   TableCell,
 } from "@/components/ui/Table";
 import { Mail, Phone, Globe, CreditCard } from "lucide-react";
+import { GuestEditClient } from "./GuestEditClient";
 
 export default async function GuestDetailPage({
   params,
@@ -24,46 +26,51 @@ export default async function GuestDetailPage({
 }) {
   const { id } = await params;
 
-  const guest = await prisma.guest.findUnique({
-    where: { id },
-    include: {
-      bookings: {
-        include: {
-          hotel: { select: { name: true } },
-          room: { select: { name: true } },
-          experience: { select: { title: true } },
-        },
-        orderBy: { checkIn: "desc" },
-      },
-    },
-  });
+  const db = createAdminClient();
+  const { data: guest, error } = await db
+    .from('Guest')
+    .select('*')
+    .eq('id', id)
+    .single();
 
-  if (!guest) {
+  if (error || !guest) {
     notFound();
   }
 
-  const totalSpent = guest.bookings.reduce(
+  // Fetch bookings for this guest with joins
+  const { data: bookingsData } = await db
+    .from('Booking')
+    .select('*, hotel:Hotel(name), room:Room(name), experience:Experience(title)')
+    .eq('guestId', id)
+    .order('checkIn', { ascending: false });
+
+  const bookings = bookingsData ?? [];
+
+  const totalSpent = bookings.reduce(
     (sum, b) => sum + Number(b.roomTotal),
     0
   );
-  const totalBookings = guest.bookings.length;
-  const totalNights = guest.bookings.reduce((sum, b) => sum + b.nights, 0);
+  const totalBookings = bookings.length;
+  const totalNights = bookings.reduce((sum, b) => sum + b.nights, 0);
+
+  // Attach bookings to guest for rendering
+  const guestWithBookings = { ...guest, bookings };
 
   return (
     <div className="space-y-8">
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-navy-500 font-serif">
-            {guest.firstName} {guest.lastName}
+          <h1 className="text-2xl font-light text-white font-serif">
+            {guestWithBookings.firstName} {guestWithBookings.lastName}
           </h1>
-          <p className="mt-1 text-sm text-navy-300 font-sans">
+          <p className="mt-1 text-sm text-white/40 font-sans">
             Guest profile and booking history
           </p>
         </div>
         <Link
           href="/admin/guests"
-          className="text-sm font-semibold text-vermillion-500 hover:text-vermillion-600 transition-colors font-sans"
+          className="text-sm font-semibold text-gold hover:text-gold transition-colors font-sans"
         >
           &larr; Back to Guests
         </Link>
@@ -72,80 +79,88 @@ export default async function GuestDetailPage({
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Left - Guest info card */}
         <div className="space-y-6">
-          <div className="rounded-xl border border-navy-100 bg-white p-6 shadow-sm">
-            <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-vermillion-500 text-xl font-bold text-white">
-              {guest.firstName.charAt(0)}
-              {guest.lastName.charAt(0)}
+          <div className="border border-white/[0.06] bg-pv-black-80 p-6">
+            <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-gold text-pv-black text-xl font-bold text-white">
+              {guestWithBookings.firstName.charAt(0)}
+              {guestWithBookings.lastName.charAt(0)}
             </div>
 
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-sm">
-                <Mail className="h-4 w-4 text-navy-300" />
-                <span className="text-navy-500">{guest.email}</span>
+                <Mail className="h-4 w-4 text-white/40" />
+                <span className="text-white">{guestWithBookings.email}</span>
               </div>
-              {guest.phone && (
+              {guestWithBookings.phone && (
                 <div className="flex items-center gap-2 text-sm">
-                  <Phone className="h-4 w-4 text-navy-300" />
-                  <span className="text-navy-500">{guest.phone}</span>
+                  <Phone className="h-4 w-4 text-white/40" />
+                  <span className="text-white">{guestWithBookings.phone}</span>
                 </div>
               )}
-              {guest.nationality && (
+              {guestWithBookings.nationality && (
                 <div className="flex items-center gap-2 text-sm">
-                  <Globe className="h-4 w-4 text-navy-300" />
-                  <span className="text-navy-500">{guest.nationality}</span>
+                  <Globe className="h-4 w-4 text-white/40" />
+                  <span className="text-white">{guestWithBookings.nationality}</span>
                 </div>
               )}
-              {guest.idNumber && (
+              {guestWithBookings.idNumber && (
                 <div className="flex items-center gap-2 text-sm">
-                  <CreditCard className="h-4 w-4 text-navy-300" />
-                  <span className="text-navy-500">{guest.idNumber}</span>
+                  <CreditCard className="h-4 w-4 text-white/40" />
+                  <span className="text-white">{guestWithBookings.idNumber}</span>
                 </div>
               )}
             </div>
 
-            {guest.notes && (
-              <div className="mt-4 rounded-lg bg-cream-50 p-3">
-                <p className="text-xs font-medium text-navy-400">Notes</p>
-                <p className="mt-1 text-sm text-navy-500">{guest.notes}</p>
+            {guestWithBookings.notes && (
+              <div className="mt-4 rounded-lg bg-pv-black-90 p-3">
+                <p className="text-xs font-medium text-white/80">Notes</p>
+                <p className="mt-1 text-sm text-white">{guestWithBookings.notes}</p>
               </div>
             )}
 
-            <p className="mt-4 text-xs text-navy-200">
-              Guest since {formatDate(guest.createdAt)}
+            <p className="mt-4 text-xs text-white/30">
+              Guest since {formatDate(guestWithBookings.createdAt)}
             </p>
+          </div>
+
+          {/* Edit form */}
+          <div className="border border-white/[0.06] bg-pv-black-80 p-6">
+            <h2 className="mb-4 text-lg font-light text-white font-serif">
+              Edit Guest
+            </h2>
+            <GuestEditClient guest={JSON.parse(JSON.stringify(guestWithBookings))} />
           </div>
 
           {/* Summary stats */}
           <div className="grid grid-cols-3 gap-3">
-            <div className="rounded-xl border border-navy-100 bg-white p-4 text-center shadow-sm">
-              <p className="text-xl font-bold text-navy-500">
+            <div className="border border-white/[0.06] bg-pv-black-80 p-4 text-center">
+              <p className="text-xl font-bold text-white">
                 {totalBookings}
               </p>
-              <p className="text-xs text-navy-300">Bookings</p>
+              <p className="text-xs text-white/40">Bookings</p>
             </div>
-            <div className="rounded-xl border border-navy-100 bg-white p-4 text-center shadow-sm">
-              <p className="text-xl font-bold text-navy-500">{totalNights}</p>
-              <p className="text-xs text-navy-300">Nights</p>
+            <div className="border border-white/[0.06] bg-pv-black-80 p-4 text-center">
+              <p className="text-xl font-bold text-white">{totalNights}</p>
+              <p className="text-xs text-white/40">Nights</p>
             </div>
-            <div className="rounded-xl border border-navy-100 bg-white p-4 text-center shadow-sm">
-              <p className="text-lg font-bold text-navy-500">
+            <div className="border border-white/[0.06] bg-pv-black-80 p-4 text-center">
+              <p className="text-lg font-bold text-white">
                 {formatCurrency(totalSpent)}
               </p>
-              <p className="text-xs text-navy-300">Total Spent</p>
+              <p className="text-xs text-white/40">Total Spent</p>
             </div>
           </div>
         </div>
 
         {/* Right - Booking history */}
         <div className="lg:col-span-2">
-          <div className="rounded-xl border border-navy-100 bg-white shadow-sm">
-            <div className="border-b border-navy-100 px-6 py-4">
-              <h2 className="text-lg font-bold text-navy-500 font-serif">
+          <div className="border border-white/[0.06] bg-pv-black-80">
+            <div className="border-b border-white/[0.06] px-6 py-4">
+              <h2 className="text-lg font-light text-white font-serif">
                 Booking History
               </h2>
             </div>
-            {guest.bookings.length === 0 ? (
-              <div className="px-6 py-12 text-center text-sm text-navy-300">
+            {guestWithBookings.bookings.length === 0 ? (
+              <div className="px-6 py-12 text-center text-sm text-white/40">
                 No bookings found for this guest.
               </div>
             ) : (
@@ -162,40 +177,41 @@ export default async function GuestDetailPage({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {guest.bookings.map((booking) => (
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                  {guestWithBookings.bookings.map((booking: any) => (
                     <TableRow key={booking.id}>
                       <TableCell>
                         <Link
                           href={`/admin/bookings/${booking.id}`}
-                          className="font-mono text-xs text-vermillion-500 hover:underline"
+                          className="font-mono text-xs text-gold hover:underline"
                         >
                           {booking.reference}
                         </Link>
                       </TableCell>
-                      <TableCell className="text-navy-400">
+                      <TableCell className="text-white/80">
                         {booking.hotel?.name ?? "---"}
                       </TableCell>
-                      <TableCell className="text-navy-400">
+                      <TableCell className="text-white/80">
                         {booking.experience?.title ?? "---"}
                       </TableCell>
-                      <TableCell className="text-navy-400">
+                      <TableCell className="text-white/80">
                         {booking.room?.name ?? "---"}
                       </TableCell>
-                      <TableCell className="text-navy-400">
+                      <TableCell className="text-white/80">
                         {formatDate(booking.checkIn)} -{" "}
                         {formatDate(booking.checkOut)}
                       </TableCell>
-                      <TableCell className="font-medium text-navy-500">
+                      <TableCell className="font-medium text-white">
                         {formatCurrency(Number(booking.roomTotal))}
                       </TableCell>
                       <TableCell>
                         <span
                           className={cn(
                             "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold",
-                            STATUS_COLORS[booking.status]
+                            STATUS_COLORS[booking.status as BookingStatus]
                           )}
                         >
-                          {STATUS_LABELS[booking.status]}
+                          {STATUS_LABELS[booking.status as BookingStatus]}
                         </span>
                       </TableCell>
                     </TableRow>
