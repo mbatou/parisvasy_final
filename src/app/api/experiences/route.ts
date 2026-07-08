@@ -84,8 +84,9 @@ export async function POST(request: NextRequest) {
       flashEnd,
     } = body;
 
-    // Auto-generate slug from title
-    const baseSlug = title
+    // Auto-generate slug from title (or sanitize provided slug)
+    const rawSlug = body.slug || title;
+    const baseSlug = rawSlug
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "");

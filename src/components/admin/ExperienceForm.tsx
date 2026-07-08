@@ -114,6 +114,11 @@ export function ExperienceForm({
     }
   }, [title, experience]);
 
+  // Always sanitize slug when user edits it
+  const handleSlugChange = (value: string) => {
+    setSlug(slugify(value));
+  };
+
   const addInclusion = () => {
     const val = inclusionInput.trim();
     if (val && !inclusions.includes(val)) {
@@ -208,7 +213,7 @@ export function ExperienceForm({
         <Input
           label="Slug"
           value={slug}
-          onChange={(e) => setSlug(e.target.value)}
+          onChange={(e) => handleSlugChange(e.target.value)}
           error={errors.slug}
           helperText="Auto-generated from title"
         />
